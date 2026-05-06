@@ -87,10 +87,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "Invoke-WebRequest '%REPO_RAW%/TNesc_Executor_Setup_0.0.1.22.exe' -OutFile '%TEMP%\TNesc_setup.exe' -UseBasicParsing"
 
 if exist "%TEMP%\TNesc_setup.exe" (
-    :: Run installer - user accepts prompts, installer creates Desktop shortcut automatically
+    :: Cài silent - tự động next/accept/finish, không cần user bấm gì
     powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-        "Start-Process '%TEMP%\TNesc_setup.exe' -Verb RunAs -Wait"
-    echo [+] TNesc installer finished
+        "Start-Process '%TEMP%\TNesc_setup.exe' -ArgumentList '/S' -Verb RunAs -Wait"
+    echo [+] TNesc installed silently
 
     :: Wait up to 15s for Desktop shortcut to appear
     set "TNESC_LNK="
