@@ -98,47 +98,27 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "Invoke-WebRequest '%REPO_RAW%/TNesc_Executor_Setup_0.0.1.22.exe' -OutFile '%TEMP%\TNesc_setup.exe' -UseBasicParsing"
 
 if exist "%TEMP%\TNesc_setup.exe" (
-    :: Run installer with elevation, wait for completion
+    :: Run installer - user accepts prompts, installer creates Desktop shortcut automatically
     powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-        "Start-Process '%TEMP%\TNesc_setup.exe' -ArgumentList '/S /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' -Verb RunAs -Wait"
+        "Start-Process '%TEMP%\TNesc_setup.exe' -Verb RunAs -Wait"
     echo [+] TNesc installer finished
-    timeout /t 5 /nobreak >nul
 
-    :: Find TNesc.exe in common locations
-    set "TNESC_EXE="
-    for %%p in (
-        "%LOCALAPPDATA%\TNesc\TNesc.exe"
-        "%LOCALAPPDATA%\Programs\TNesc\TNesc.exe"
-        "%LOCALAPPDATA%\Programs\tnesc\tnesc.exe"
-        "%ProgramFiles%\TNesc\TNesc.exe"
-        "%ProgramFiles(x86)%\TNesc\TNesc.exe"
-        "%APPDATA%\TNesc\TNesc.exe"
-    ) do (
-        if exist %%p if "!TNESC_EXE!"=="" set "TNESC_EXE=%%~p"
+    :: Wait up to 15s for Desktop shortcut to appear
+    set "TNESC_LNK="
+    for /l %%i in (1,1,15) do (
+        if "!TNESC_LNK!"=="" (
+            for %%f in ("%DESKTOP%\TNesc*.lnk" "%DESKTOP%\tnesc*.lnk") do (
+                if exist "%%f" if "!TNESC_LNK!"=="" set "TNESC_LNK=%%f"
+            )
+            if "!TNESC_LNK!"=="" timeout /t 1 /nobreak >nul
+        )
     )
 
-    if not "!TNESC_EXE!"=="" (
-        echo [+] Found TNesc at !TNESC_EXE!
-
-        :: Create Desktop shortcut if not exists
-        if not exist "%DESKTOP%\TNesc.lnk" (
-            powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-                "$ws=New-Object -ComObject WScript.Shell;$s=$ws.CreateShortcut('%DESKTOP%\TNesc.lnk');$s.TargetPath='!TNESC_EXE!';$s.WorkingDirectory=[System.IO.Path]::GetDirectoryName('!TNESC_EXE!');$s.Description='TNesc Executor';$s.Save()"
-            echo [+] TNesc shortcut created on Desktop
-        )
-
-        :: Add .lnk shortcut to Startup folder
-        powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-            "$ws=New-Object -ComObject WScript.Shell;$s=$ws.CreateShortcut('%STARTUP%\TNesc.lnk');$s.TargetPath='!TNESC_EXE!';$s.WorkingDirectory=[System.IO.Path]::GetDirectoryName('!TNESC_EXE!');$s.Description='TNesc Executor';$s.Save()"
-        echo [+] TNesc shortcut added to Startup folder
+    if not "!TNESC_LNK!"=="" (
+        copy /Y "!TNESC_LNK!" "%STARTUP%\TNesc.lnk" >nul
+        echo [+] TNesc shortcut added to Startup folder from !TNESC_LNK!
     ) else (
-        :: Fallback: installer may have created desktop shortcut already
-        if exist "%DESKTOP%\TNesc.lnk" (
-            copy /Y "%DESKTOP%\TNesc.lnk" "%STARTUP%\TNesc.lnk" >nul
-            echo [+] TNesc startup shortcut copied from Desktop
-        ) else (
-            echo [-] TNesc.exe not found - may need manual shortcut
-        )
+        echo [-] TNesc desktop shortcut not found after install
     )
 ) else (
     echo [-] TNesc download failed, skipping
