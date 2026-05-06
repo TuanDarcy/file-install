@@ -3,9 +3,10 @@ setlocal EnableDelayedExpansion
 title KAITUN SETUP
 
 set "DESKTOP=%USERPROFILE%\Desktop"
+set "SETUP_DIR=%DESKTOP%\AutoSetupTFA"
 set "FARMSYNC_DIR=%DESKTOP%\FarmSync"
 set "KEY_FILE=%FARMSYNC_DIR%\key.txt"
-set "LOCAL_VER_FILE=%FARMSYNC_DIR%\ver.txt"
+set "LOCAL_VER_FILE=%SETUP_DIR%\ver.txt"
 set "OPTIMIZER_EXE=%DESKTOP%\OptimizerRoblox.exe"
 set "REPO_RAW=https://github.com/TuanDarcy/file-install/raw/main"
 set "STARTUP=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
@@ -134,17 +135,20 @@ if not exist "%KEY_FILE%" (
     echo [+] Key saved to FarmSync folder
 )
 
-:: Copy this bat to FarmSync folder
-copy /Y "%~f0" "%FARMSYNC_DIR%\setup.bat" >nul
-echo [+] Setup script saved to FarmSync folder
+:: Ensure AutoSetupTFA folder exists
+if not exist "%SETUP_DIR%" mkdir "%SETUP_DIR%" >nul 2>&1
+
+:: Copy this bat to AutoSetupTFA folder
+copy /Y "%~f0" "%SETUP_DIR%\setup.bat" >nul
+echo [+] Setup script saved to AutoSetupTFA folder
 
 :: Create silent VBS launcher for startup
 (
     echo Set ws = CreateObject^("WScript.Shell"^)
-    echo ws.Run Chr^(34^) ^& "%FARMSYNC_DIR%\setup.bat" ^& Chr^(34^), 0, False
-) > "%FARMSYNC_DIR%\kaitun_update.vbs"
+    echo ws.Run Chr^(34^) ^& "%SETUP_DIR%\setup.bat" ^& Chr^(34^), 0, False
+) > "%SETUP_DIR%\kaitun_update.vbs"
 
-copy /Y "%FARMSYNC_DIR%\kaitun_update.vbs" "%STARTUP%\KaitunUpdate.vbs" >nul
+copy /Y "%SETUP_DIR%\kaitun_update.vbs" "%STARTUP%\KaitunUpdate.vbs" >nul
 echo [+] Auto-update check added to startup ^(runs silently on every boot^)
 
 :: Save current version
