@@ -146,15 +146,12 @@ echo [+] Auto-update check added to startup ^(runs silently on every boot^)
 :: Save current version
 echo !REMOTE_VER!>"%LOCAL_VER_FILE%"
 
-:: --- 4. FarmSync (last - runs in separate window) ---
+:: --- 4. FarmSync (last - runs inline, same window) ---
 echo.
-echo [4/4] Installing FarmSync ^(opens separate window^)...
-:: Truyền key qua file tạm để tránh lỗi escape trong cmd /k
-set "FS_KEY_FILE=%TEMP%\fs_key_tmp.txt"
-echo !FARMSYNC_KEY!>"%FS_KEY_FILE%"
-
-start "FarmSync Install" cmd /k "set /p FARMSYNC_KEY=<"%FS_KEY_FILE%" & set FARMSYNC_URL=%FARMSYNC_URL% & set FARMSYNC_CLIENT=%FARMSYNC_CLIENT% & powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm 'https://files.farmsync.cloud/files/install.ps1' | iex\""
-echo [+] FarmSync install started in separate window
+echo [4/4] Installing FarmSync...
+set FARMSYNC_URL=%FARMSYNC_URL%
+set FARMSYNC_CLIENT=%FARMSYNC_CLIENT%
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm 'https://files.farmsync.cloud/files/install.ps1' | iex"
 
 echo.
 echo  ==========================================
