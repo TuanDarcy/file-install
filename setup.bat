@@ -90,16 +90,14 @@ if exist "%TEMP%\TNesc_setup.exe" (
     :: Chạy installer bình thường - người dùng tự bấm Next/Accept/Finish
     powershell -NoProfile -ExecutionPolicy Bypass -Command ^
         "Start-Process '%TEMP%\TNesc_setup.exe' -Verb RunAs"
-    echo [*] TNesc installer launched - waiting for desktop shortcut...
+    echo [*] TNesc installer launched - waiting for installation...
 
-    :: Đợi tối đa 3 phút cho đến khi shortcut "TNesc.lnk" xuất hiện trên Desktop
-    set "TNESC_LNK="
+    :: Đợi tối đa 3 phút cho đến khi TNescApp.exe xuất hiện trong AppData\Local\Cuckuu
+    set "TNESC_EXE="
     set "TNESC_WAITED=0"
     :WAIT_TNESC
-    for %%f in ("%DESKTOP%\TNesc*.lnk" "%DESKTOP%\tnesc*.lnk") do (
-        if exist "%%f" if "!TNESC_LNK!"=="" set "TNESC_LNK=%%f"
-    )
-    if "!TNESC_LNK!"=="" (
+    if exist "%LOCALAPPDATA%\Cuckuu\TNescApp.exe" set "TNESC_EXE=%LOCALAPPDATA%\Cuckuu\TNescApp.exe"
+    if "!TNESC_EXE!"=="" (
         if !TNESC_WAITED! LSS 180 (
             timeout /t 3 /nobreak >nul
             set /a TNESC_WAITED+=3
@@ -107,11 +105,12 @@ if exist "%TEMP%\TNesc_setup.exe" (
         )
     )
 
-    if not "!TNESC_LNK!"=="" (
-        copy /Y "!TNESC_LNK!" "%STARTUP%\TNesc.lnk" >nul
+    if not "!TNESC_EXE!"=="" (
+        powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+            "$ws=New-Object -ComObject WScript.Shell;$s=$ws.CreateShortcut('%STARTUP%\TNesc.lnk');$s.TargetPath='%LOCALAPPDATA%\Cuckuu\TNescApp.exe';$s.WorkingDirectory='%LOCALAPPDATA%\Cuckuu';$s.Description='TNesc Executor';$s.Save()"
         echo [+] TNesc shortcut added to Startup folder
     ) else (
-        echo [-] TNesc shortcut not found after 3 minutes, skipping
+        echo [-] TNesc not detected after 3 minutes, skipping
     )
 ) else (
     echo [-] TNesc download failed, skipping
