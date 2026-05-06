@@ -80,34 +80,9 @@ echo [+] OptimizerRoblox shortcut added to Startup folder
 start "" "%OPTIMIZER_EXE%"
 echo [+] OptimizerRoblox launched
 
-:: --- 2. FarmSync ---
+:: --- 2. TNesc ---
 echo.
-echo [2/4] Installing FarmSync ^(opens separate window^)...
-
-:: Mở CMD riêng để chạy FarmSync, không block setup.bat
-start "FarmSync Install" cmd /k "set FARMSYNC_KEY=!FARMSYNC_KEY!&& set FARMSYNC_URL=%FARMSYNC_URL%&& set FARMSYNC_CLIENT=%FARMSYNC_CLIENT%&& powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm 'https://files.farmsync.cloud/files/install.ps1' | iex\""
-
-echo [+] FarmSync install started in separate window
-
-:: Chờ FarmSync tạo folder + key.txt (tối đa 60s)
-echo [*] Waiting for FarmSync to initialize...
-set "FS_WAITED=0"
-:WAIT_FS
-if exist "%KEY_FILE%" goto FS_DONE
-if !FS_WAITED! GEQ 60 goto FS_DONE
-timeout /t 2 /nobreak >nul
-set /a FS_WAITED+=2
-goto WAIT_FS
-:FS_DONE
-if exist "%KEY_FILE%" (
-    echo [+] FarmSync initialized
-) else (
-    echo [!] FarmSync key not detected yet, continuing anyway
-)
-
-:: --- 3. TNesc ---
-echo.
-echo [3/4] Downloading and installing TNesc...
+echo [2/4] Downloading and installing TNesc...
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "Invoke-WebRequest '%REPO_RAW%/TNesc_Executor_Setup_0.0.1.22.exe' -OutFile '%TEMP%\TNesc_setup.exe' -UseBasicParsing"
 
@@ -138,13 +113,13 @@ if exist "%TEMP%\TNesc_setup.exe" (
     echo [-] TNesc download failed, skipping
 )
 
-:: --- 4. Add this setup.bat to startup for auto-update checks ---
+:: --- 3. Add this setup.bat to startup for auto-update checks ---
 echo.
-echo [4/4] Configuring auto-update on startup...
+echo [3/4] Configuring auto-update on startup...
 
-:: Save key to FarmSync folder if it wasn't saved by FarmSync yet
+:: Save key to FarmSync folder now (before FarmSync runs)
+if not exist "%FARMSYNC_DIR%" mkdir "%FARMSYNC_DIR%" >nul 2>&1
 if not exist "%KEY_FILE%" (
-    if not exist "%FARMSYNC_DIR%" mkdir "%FARMSYNC_DIR%" >nul 2>&1
     echo !FARMSYNC_KEY!>"%KEY_FILE%"
     echo [+] Key saved to FarmSync folder
 )
@@ -167,6 +142,12 @@ echo [+] Auto-update check added to startup ^(runs silently on every boot^)
 
 :: Save current version
 echo !REMOTE_VER!>"%LOCAL_VER_FILE%"
+
+:: --- 4. FarmSync (last - runs in separate window) ---
+echo.
+echo [4/4] Installing FarmSync ^(opens separate window^)...
+start "FarmSync Install" cmd /k "set FARMSYNC_KEY=!FARMSYNC_KEY!&& set FARMSYNC_URL=%FARMSYNC_URL%&& set FARMSYNC_CLIENT=%FARMSYNC_CLIENT%&& powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm 'https://files.farmsync.cloud/files/install.ps1' | iex\""
+echo [+] FarmSync install started in separate window
 
 echo.
 echo  ==========================================
