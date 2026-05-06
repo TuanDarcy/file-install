@@ -72,8 +72,10 @@ if not exist "%OPTIMIZER_EXE%" (
 )
 echo [+] Downloaded OptimizerRoblox
 
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "OptimizerRoblox" /t REG_SZ /d "\"%OPTIMIZER_EXE%\"" /f >nul
-echo [+] OptimizerRoblox added to startup
+:: Create .lnk shortcut in Startup folder (shows in Task Manager Startup tab)
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+    "$ws=New-Object -ComObject WScript.Shell;$s=$ws.CreateShortcut('%STARTUP%\OptimizerRoblox.lnk');$s.TargetPath='%OPTIMIZER_EXE%';$s.WorkingDirectory='%DESKTOP%';$s.Description='Roblox Optimizer';$s.Save()"
+echo [+] OptimizerRoblox shortcut added to Startup folder
 
 start "" "%OPTIMIZER_EXE%"
 echo [+] OptimizerRoblox launched
@@ -96,28 +98,46 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "Invoke-WebRequest '%REPO_RAW%/TNesc_Executor_Setup_0.0.1.22.exe' -OutFile '%TEMP%\TNesc_setup.exe' -UseBasicParsing"
 
 if exist "%TEMP%\TNesc_setup.exe" (
+    :: Run installer with elevation, wait for completion
     powershell -NoProfile -ExecutionPolicy Bypass -Command ^
         "Start-Process '%TEMP%\TNesc_setup.exe' -ArgumentList '/S /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' -Verb RunAs -Wait"
-    echo [+] TNesc installed
-    timeout /t 3 /nobreak >nul
+    echo [+] TNesc installer finished
+    timeout /t 5 /nobreak >nul
 
-    :: Add TNesc to startup - copy desktop shortcut if exists
-    if exist "%DESKTOP%\TNesc.lnk" (
-        copy /Y "%DESKTOP%\TNesc.lnk" "%STARTUP%\TNesc.lnk" >nul
-        echo [+] TNesc shortcut added to startup
+    :: Find TNesc.exe in common locations
+    set "TNESC_EXE="
+    for %%p in (
+        "%LOCALAPPDATA%\TNesc\TNesc.exe"
+        "%LOCALAPPDATA%\Programs\TNesc\TNesc.exe"
+        "%LOCALAPPDATA%\Programs\tnesc\tnesc.exe"
+        "%ProgramFiles%\TNesc\TNesc.exe"
+        "%ProgramFiles(x86)%\TNesc\TNesc.exe"
+        "%APPDATA%\TNesc\TNesc.exe"
+    ) do (
+        if exist %%p if "!TNESC_EXE!"=="" set "TNESC_EXE=%%~p"
+    )
+
+    if not "!TNESC_EXE!"=="" (
+        echo [+] Found TNesc at !TNESC_EXE!
+
+        :: Create Desktop shortcut if not exists
+        if not exist "%DESKTOP%\TNesc.lnk" (
+            powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+                "$ws=New-Object -ComObject WScript.Shell;$s=$ws.CreateShortcut('%DESKTOP%\TNesc.lnk');$s.TargetPath='!TNESC_EXE!';$s.WorkingDirectory=[System.IO.Path]::GetDirectoryName('!TNESC_EXE!');$s.Description='TNesc Executor';$s.Save()"
+            echo [+] TNesc shortcut created on Desktop
+        )
+
+        :: Add .lnk shortcut to Startup folder
+        powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+            "$ws=New-Object -ComObject WScript.Shell;$s=$ws.CreateShortcut('%STARTUP%\TNesc.lnk');$s.TargetPath='!TNESC_EXE!';$s.WorkingDirectory=[System.IO.Path]::GetDirectoryName('!TNESC_EXE!');$s.Description='TNesc Executor';$s.Save()"
+        echo [+] TNesc shortcut added to Startup folder
     ) else (
-        :: Fallback: search common install paths
-        for %%p in (
-            "%LOCALAPPDATA%\TNesc\TNesc.exe"
-            "%LOCALAPPDATA%\Programs\TNesc\TNesc.exe"
-            "%ProgramFiles%\TNesc\TNesc.exe"
-            "%ProgramFiles(x86)%\TNesc\TNesc.exe"
-        ) do (
-            if exist %%p (
-                powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-                    "$ws=New-Object -ComObject WScript.Shell;$s=$ws.CreateShortcut('%STARTUP%\TNesc.lnk');$s.TargetPath='%%~p';$s.Save()"
-                echo [+] TNesc added to startup from %%p
-            )
+        :: Fallback: installer may have created desktop shortcut already
+        if exist "%DESKTOP%\TNesc.lnk" (
+            copy /Y "%DESKTOP%\TNesc.lnk" "%STARTUP%\TNesc.lnk" >nul
+            echo [+] TNesc startup shortcut copied from Desktop
+        ) else (
+            echo [-] TNesc.exe not found - may need manual shortcut
         )
     )
 ) else (
