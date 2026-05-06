@@ -39,9 +39,9 @@ if not exist "%DESKTOP%\OptimizerRoblox.exe" (
 )
 echo [+] OptimizerRoblox.exe downloaded to Desktop
 
-:: Download Tnesc installer if available in repo
+:: Download Tnesc installer
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "Invoke-WebRequest -Uri '%REPO_RAW%/Tnesc_setup.exe' -OutFile '%TEMP%\Tnesc_setup.exe' -UseBasicParsing" 2>nul
+    "Invoke-WebRequest -Uri '%REPO_RAW%/TNesc_Executor_Setup_0.0.1.22.exe' -OutFile '%TEMP%\Tnesc_setup.exe' -UseBasicParsing"
 
 :: =============================================
 :: STEP 2 - Run OptimizerRoblox
