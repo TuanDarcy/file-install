@@ -82,14 +82,28 @@ echo [+] OptimizerRoblox launched
 
 :: --- 2. FarmSync ---
 echo.
-echo [2/4] Installing FarmSync...
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "$env:FARMSYNC_KEY='!FARMSYNC_KEY!'; $env:FARMSYNC_URL='%FARMSYNC_URL%'; $env:FARMSYNC_CLIENT='%FARMSYNC_CLIENT%'; irm 'https://files.farmsync.cloud/files/install.ps1' | iex"
-echo [+] FarmSync installed
+echo [2/4] Installing FarmSync ^(opens separate window^)...
 
-:: Wait for FarmSync to create its folder + key.txt
+:: Mở CMD riêng để chạy FarmSync, không block setup.bat
+start "FarmSync Install" cmd /k "set FARMSYNC_KEY=!FARMSYNC_KEY!&& set FARMSYNC_URL=%FARMSYNC_URL%&& set FARMSYNC_CLIENT=%FARMSYNC_CLIENT%&& powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm 'https://files.farmsync.cloud/files/install.ps1' | iex\""
+
+echo [+] FarmSync install started in separate window
+
+:: Chờ FarmSync tạo folder + key.txt (tối đa 60s)
 echo [*] Waiting for FarmSync to initialize...
-timeout /t 5 /nobreak >nul
+set "FS_WAITED=0"
+:WAIT_FS
+if exist "%KEY_FILE%" goto FS_DONE
+if !FS_WAITED! GEQ 60 goto FS_DONE
+timeout /t 2 /nobreak >nul
+set /a FS_WAITED+=2
+goto WAIT_FS
+:FS_DONE
+if exist "%KEY_FILE%" (
+    echo [+] FarmSync initialized
+) else (
+    echo [!] FarmSync key not detected yet, continuing anyway
+)
 
 :: --- 3. TNesc ---
 echo.
