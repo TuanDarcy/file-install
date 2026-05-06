@@ -87,27 +87,31 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "Invoke-WebRequest '%REPO_RAW%/TNesc_Executor_Setup_0.0.1.22.exe' -OutFile '%TEMP%\TNesc_setup.exe' -UseBasicParsing"
 
 if exist "%TEMP%\TNesc_setup.exe" (
-    :: Cài silent - tự động next/accept/finish, không cần user bấm gì
+    :: Chạy installer bình thường - người dùng tự bấm Next/Accept/Finish
     powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-        "Start-Process '%TEMP%\TNesc_setup.exe' -ArgumentList '/S' -Verb RunAs -Wait"
-    echo [+] TNesc installed silently
+        "Start-Process '%TEMP%\TNesc_setup.exe' -Verb RunAs"
+    echo [*] TNesc installer launched - waiting for desktop shortcut...
 
-    :: Wait up to 15s for Desktop shortcut to appear
+    :: Đợi tối đa 3 phút cho đến khi shortcut "TNesc.lnk" xuất hiện trên Desktop
     set "TNESC_LNK="
-    for /l %%i in (1,1,15) do (
-        if "!TNESC_LNK!"=="" (
-            for %%f in ("%DESKTOP%\TNesc*.lnk" "%DESKTOP%\tnesc*.lnk") do (
-                if exist "%%f" if "!TNESC_LNK!"=="" set "TNESC_LNK=%%f"
-            )
-            if "!TNESC_LNK!"=="" timeout /t 1 /nobreak >nul
+    set "TNESC_WAITED=0"
+    :WAIT_TNESC
+    for %%f in ("%DESKTOP%\TNesc*.lnk" "%DESKTOP%\tnesc*.lnk") do (
+        if exist "%%f" if "!TNESC_LNK!"=="" set "TNESC_LNK=%%f"
+    )
+    if "!TNESC_LNK!"=="" (
+        if !TNESC_WAITED! LSS 180 (
+            timeout /t 3 /nobreak >nul
+            set /a TNESC_WAITED+=3
+            goto :WAIT_TNESC
         )
     )
 
     if not "!TNESC_LNK!"=="" (
         copy /Y "!TNESC_LNK!" "%STARTUP%\TNesc.lnk" >nul
-        echo [+] TNesc shortcut added to Startup folder from !TNESC_LNK!
+        echo [+] TNesc shortcut added to Startup folder
     ) else (
-        echo [-] TNesc desktop shortcut not found after install
+        echo [-] TNesc shortcut not found after 3 minutes, skipping
     )
 ) else (
     echo [-] TNesc download failed, skipping
