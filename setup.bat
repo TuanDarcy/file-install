@@ -64,35 +64,53 @@ echo.
 echo [*] Checking tools status...
 if not exist "!TOOLS_DIR!" mkdir "!TOOLS_DIR!"
 
-:: Check OptimizerRoblox version (check Desktop, existing in TOOLS_DIR, then download)
+:: Check OptimizerRoblox version
 set "UPDATE_OPTIMIZER=1"
 set "OPTIMIZER_SRC="
+set "LOCAL_VER=0"
+set "REMOTE_VER=0"
 
-:: Already in TOOLS_DIR?
+:: Get remote version
+for /f "tokens=*" %%v in ('powershell -NoProfile -Command "try{(Invoke-WebRequest '%REPO_RAW%/version.txt' -UseBasicParsing -TimeoutSec 5).Content.Trim()}catch{'0'}" 2^>nul') do set "REMOTE_VER=%%v"
+
+:: Find exe: TOOLS_DIR first, then Desktop
 if exist "!TOOLS_DIR!\OptimizerRoblox.exe" set "OPTIMIZER_SRC=!TOOLS_DIR!\OptimizerRoblox.exe"
-:: Check Desktop root
 if "!OPTIMIZER_SRC!"=="" if exist "!DESKTOP!\OptimizerRoblox.exe" set "OPTIMIZER_SRC=!DESKTOP!\OptimizerRoblox.exe"
 
 if not "!OPTIMIZER_SRC!"=="" (
-    for /f "tokens=*" %%v in ('powershell -NoProfile -Command "try{(Invoke-WebRequest '%REPO_RAW%/version.txt' -UseBasicParsing -TimeoutSec 5).Content.Trim()}catch{'0'}" 2^>nul') do set "REMOTE_VER=%%v"
-    for /f "tokens=*" %%v in ('powershell -NoProfile -Command "(Get-Item '!OPTIMIZER_SRC!').VersionInfo.FileVersion" 2^>nul') do set "LOCAL_VER=%%v"
+    :: Check sidecar version file first (most reliable)
+    set "VER_SIDECAR=!TOOLS_DIR!\optimizer_ver.txt"
+    if exist "!VER_SIDECAR!" (
+        set /p LOCAL_VER=<"!VER_SIDECAR!"
+        set "LOCAL_VER=!LOCAL_VER: =!"
+    ) else (
+        :: Fallback: read Windows FileVersion embedded in exe
+        for /f "tokens=*" %%v in ('powershell -NoProfile -Command "(Get-Item '!OPTIMIZER_SRC!').VersionInfo.FileVersion" 2^>nul') do set "LOCAL_VER=%%v"
+        if "!LOCAL_VER!"=="" set "LOCAL_VER=0"
+    )
 
     if "!REMOTE_VER!"=="!LOCAL_VER!" (
         echo [+] OptimizerRoblox.exe up to date ^(v!LOCAL_VER!^)
         if not "!OPTIMIZER_SRC!"=="!TOOLS_DIR!\OptimizerRoblox.exe" (
             copy /Y "!OPTIMIZER_SRC!" "!TOOLS_DIR!\OptimizerRoblox.exe" >nul
-            echo [+] Copied to KaitunTools folder
         )
         set "UPDATE_OPTIMIZER=0"
     ) else (
-        echo [*] New OptimizerRoblox version ^(remote: v!REMOTE_VER!, local: v!LOCAL_VER!^) - updating...
+        echo [*] OptimizerRoblox update needed ^(local: v!LOCAL_VER! -> remote: v!REMOTE_VER!^)
     )
 )
 
 if "!UPDATE_OPTIMIZER!"=="1" (
     echo [4/5] Downloading OptimizerRoblox.exe...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/OptimizerRoblox.exe' -OutFile '!TOOLS_DIR!\OptimizerRoblox.exe' -UseBasicParsing"
-    if exist "!TOOLS_DIR!\OptimizerRoblox.exe" (echo [+] OptimizerRoblox.exe saved) else (echo [-] OptimizerRoblox.exe FAILED)
+    if exist "!TOOLS_DIR!\OptimizerRoblox.exe" (
+        echo [+] OptimizerRoblox.exe saved
+        :: Save version sidecar so next run can detect version correctly
+        echo !REMOTE_VER!>"!TOOLS_DIR!\optimizer_ver.txt"
+        echo [+] Version !REMOTE_VER! saved
+    ) else (
+        echo [-] OptimizerRoblox.exe FAILED
+    )
 )
 
 :: Check volt.exe (check TOOLS_DIR, then Downloads, then download)
