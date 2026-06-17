@@ -144,11 +144,23 @@ if exist "%LOCALAPPDATA%\FarmSync" (
         echo [5/5] Installing FarmSync...
         set FARMSYNC_URL=https://downloads.farmsync.cloud/client_web.exe
         set FARMSYNC_CLIENT=client_web
-        powershell -NoProfile -ExecutionPolicy Bypass -Command "irm 'https://files.farmsync.cloud/files/install.ps1' | iex"
-        echo [+] FarmSync install complete
-        :: Launch FarmSync_AutoStart after install
-        timeout /t 3 /nobreak >nul
-        for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA,$env:APPDATA,'%DESKTOP%' -Filter 'FarmSync_AutoStart*' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART=%%f"
+        :: Chạy FarmSync trong cửa sổ riêng - tránh nó thoát CMD main
+        set "FS_TEMP=%TEMP%\farmsync_%RANDOM%.cmd"
+        (
+            echo @echo off
+            echo title FarmSync Install
+            echo set FARMSYNC_KEY=!FARMSYNC_KEY!
+            echo set FARMSYNC_URL=https://downloads.farmsync.cloud/client_web.exe
+            echo set FARMSYNC_CLIENT=client_web
+            echo powershell -NoProfile -ExecutionPolicy Bypass -Command "irm 'https://files.farmsync.cloud/files/install.ps1' | iex"
+        ) > "!FS_TEMP!"
+        start "FarmSync Install" cmd /c "!FS_TEMP!"
+        echo [+] FarmSync installing in separate window...
+        :: Đợi FarmSync install xong (tối đa 60s) rồi tìm AutoStart
+        echo [*] Waiting for FarmSync to install (60s)...
+        timeout /t 60 /nobreak >nul
+        :: Launch FarmSync_AutoStart sau khi cài xong
+        for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA,$env:APPDATA,'!DESKTOP!' -Filter 'FarmSync_AutoStart*' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART=%%f"
         if not "!FS_AUTOSTART!"=="" (
             start "" "!FS_AUTOSTART!"
             echo [+] FarmSync_AutoStart launched
