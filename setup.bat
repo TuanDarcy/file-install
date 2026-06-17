@@ -161,16 +161,25 @@ if exist "%LOCALAPPDATA%\FarmSync" (
         ) > "!FS_TEMP!"
         start "FarmSync Install" cmd /c "!FS_TEMP!"
         echo [+] FarmSync installing in separate window...
-        :: Đợi FarmSync install xong (tối đa 60s) rồi tìm AutoStart
-        echo [*] Waiting for FarmSync to install (60s)...
-        timeout /t 60 /nobreak >nul
-        :: Launch FarmSync_AutoStart sau khi cài xong
-        for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA,$env:APPDATA,'!DESKTOP!' -Filter 'FarmSync_AutoStart*' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART=%%f"
+        :: Poll mỗi 3s - khi nào tìm thấy FarmSync_AutoStart thì bật và thoát loop
+        echo [*] Waiting for FarmSync to finish installing...
+        set "FS_AUTOSTART="
+        set "FS_WAIT=0"
+        :WAIT_FARMSYNC
+        powershell -NoProfile -Command "Start-Sleep -Seconds 3" >nul 2>&1
+        set /a FS_WAIT+=3
+        for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA,$env:APPDATA -Filter 'FarmSync_AutoStart*' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART=%%f"
+        if "!FS_AUTOSTART!"=="" (
+            if !FS_WAIT! LSS 300 (
+                goto :WAIT_FARMSYNC
+            ) else (
+                echo [!] FarmSync install timeout after 5 min
+            )
+        )
         if not "!FS_AUTOSTART!"=="" (
+            echo [+] FarmSync installed! Launching AutoStart...
             start "" "!FS_AUTOSTART!"
             echo [+] FarmSync_AutoStart launched
-        ) else (
-            echo [*] FarmSync_AutoStart not found - open manually from FarmSync folder
         )
     )
 )
