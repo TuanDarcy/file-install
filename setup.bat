@@ -39,8 +39,9 @@ echo [+] Time synced with Cloudflare
 :: ===== [1.5/4] Set Virtual RAM to 350GB =====
 echo.
 echo [1.5/4] Setting Virtual Memory to 350GB...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $cs = Get-WmiObject -Class Win32_ComputerSystem; $cs.AutomaticManagedPageFile = $false; $cs.Put() | Out-Null; $pf = Get-WmiObject -Class Win32_PageFileSetting -Filter \"Name='C:\\\\pagefile.sys'\"; if ($pf) { $pf.Delete() | Out-Null }; $pf = Set-WmiInstance -Class Win32_PageFileSetting -Arguments @{Name='C:\pagefile.sys'; InitialSize=350000; MaximumSize=350000}; Write-Output 'Virtual Memory set to 350GB' } catch { Write-Output \"Error: $_\" }"
-echo [+] Virtual RAM configured (may need restart to apply fully)
+powershell -NoProfile -ExecutionPolicy Bypass -Command "New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'PagingFiles' -Value @('C:\pagefile.sys 350000 350000') -PropertyType MultiString -Force | Out-Null; Write-Output 'Virtual Memory set to 350GB (restart required to apply)'"
+echo [+] Virtual RAM configured (restart may be needed to apply)
+
 
 :: ===== [2/4] CuongBoots =====
 echo.
