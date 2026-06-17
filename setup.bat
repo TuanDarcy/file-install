@@ -89,6 +89,8 @@ if exist "!DESKTOP!\OptimizerRoblox.exe" (
 
     if "!REMOTE_VER!"=="!LOCAL_VER!" (
         echo [+] OptimizerRoblox.exe up to date ^(v!LOCAL_VER!^)
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process '!DESKTOP!\OptimizerRoblox.exe' -Verb RunAs"
+        echo [+] OptimizerRoblox launched as Admin
         set "UPDATE_OPTIMIZER=0"
     ) else (
         echo [*] Updating OptimizerRoblox ^(v!LOCAL_VER! -^> v!REMOTE_VER!^)...
@@ -102,6 +104,9 @@ if "!UPDATE_OPTIMIZER!"=="1" (
     if exist "!DESKTOP!\OptimizerRoblox.exe" (
         echo !REMOTE_VER!>"!DESKTOP!\optimizer_ver.txt"
         echo [+] OptimizerRoblox.exe v!REMOTE_VER! saved to Desktop
+        :: Chạy với quyền admin
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process '!DESKTOP!\OptimizerRoblox.exe' -Verb RunAs"
+        echo [+] OptimizerRoblox launched as Admin
     ) else (
         echo [-] OptimizerRoblox.exe FAILED
     )
