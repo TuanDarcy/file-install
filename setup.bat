@@ -10,7 +10,6 @@ if %errorLevel% neq 0 (
 )
 
 set "DESKTOP=%USERPROFILE%\Desktop"
-set "TOOLS_DIR=%USERPROFILE%\Desktop\KaitunTools"
 set "REPO_RAW=https://raw.githubusercontent.com/TuanDarcy/file-install/main"
 set "FARMSYNC_KEY="
 
@@ -66,73 +65,53 @@ if not exist "!TOOLS_DIR!" mkdir "!TOOLS_DIR!"
 
 :: Check OptimizerRoblox version
 set "UPDATE_OPTIMIZER=1"
-set "OPTIMIZER_SRC="
 set "LOCAL_VER=0"
 set "REMOTE_VER=0"
 
 :: Get remote version
 for /f "tokens=*" %%v in ('powershell -NoProfile -Command "try{(Invoke-WebRequest '%REPO_RAW%/version.txt' -UseBasicParsing -TimeoutSec 5).Content.Trim()}catch{'0'}" 2^>nul') do set "REMOTE_VER=%%v"
 
-:: Find exe: TOOLS_DIR first, then Desktop
-if exist "!TOOLS_DIR!\OptimizerRoblox.exe" set "OPTIMIZER_SRC=!TOOLS_DIR!\OptimizerRoblox.exe"
-if "!OPTIMIZER_SRC!"=="" if exist "!DESKTOP!\OptimizerRoblox.exe" set "OPTIMIZER_SRC=!DESKTOP!\OptimizerRoblox.exe"
-
-if not "!OPTIMIZER_SRC!"=="" (
-    :: Check sidecar version file first (most reliable)
-    set "VER_SIDECAR=!TOOLS_DIR!\optimizer_ver.txt"
-    if exist "!VER_SIDECAR!" (
-        set /p LOCAL_VER=<"!VER_SIDECAR!"
+if exist "!DESKTOP!\OptimizerRoblox.exe" (
+    :: Check sidecar version file
+    if exist "!DESKTOP!\optimizer_ver.txt" (
+        set /p LOCAL_VER=<"!DESKTOP!\optimizer_ver.txt"
         set "LOCAL_VER=!LOCAL_VER: =!"
     ) else (
-        :: Fallback: read Windows FileVersion embedded in exe
-        for /f "tokens=*" %%v in ('powershell -NoProfile -Command "(Get-Item '!OPTIMIZER_SRC!').VersionInfo.FileVersion" 2^>nul') do set "LOCAL_VER=%%v"
+        for /f "tokens=*" %%v in ('powershell -NoProfile -Command "(Get-Item '!DESKTOP!\OptimizerRoblox.exe').VersionInfo.FileVersion" 2^>nul') do set "LOCAL_VER=%%v"
         if "!LOCAL_VER!"=="" set "LOCAL_VER=0"
     )
 
     if "!REMOTE_VER!"=="!LOCAL_VER!" (
         echo [+] OptimizerRoblox.exe up to date ^(v!LOCAL_VER!^)
-        if not "!OPTIMIZER_SRC!"=="!TOOLS_DIR!\OptimizerRoblox.exe" (
-            copy /Y "!OPTIMIZER_SRC!" "!TOOLS_DIR!\OptimizerRoblox.exe" >nul
-        )
         set "UPDATE_OPTIMIZER=0"
     ) else (
-        echo [*] OptimizerRoblox update needed ^(local: v!LOCAL_VER! -> remote: v!REMOTE_VER!^)
+        echo [*] Updating OptimizerRoblox ^(v!LOCAL_VER! -^> v!REMOTE_VER!^)...
+        del /f "!DESKTOP!\OptimizerRoblox.exe" >nul 2>&1
     )
 )
 
 if "!UPDATE_OPTIMIZER!"=="1" (
-    echo [4/5] Downloading OptimizerRoblox.exe...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/OptimizerRoblox.exe' -OutFile '!TOOLS_DIR!\OptimizerRoblox.exe' -UseBasicParsing"
-    if exist "!TOOLS_DIR!\OptimizerRoblox.exe" (
-        echo [+] OptimizerRoblox.exe saved
-        :: Save version sidecar so next run can detect version correctly
-        echo !REMOTE_VER!>"!TOOLS_DIR!\optimizer_ver.txt"
-        echo [+] Version !REMOTE_VER! saved
+    echo [4/5] Downloading OptimizerRoblox.exe to Desktop...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/OptimizerRoblox.exe' -OutFile '!DESKTOP!\OptimizerRoblox.exe' -UseBasicParsing"
+    if exist "!DESKTOP!\OptimizerRoblox.exe" (
+        echo !REMOTE_VER!>"!DESKTOP!\optimizer_ver.txt"
+        echo [+] OptimizerRoblox.exe v!REMOTE_VER! saved to Desktop
     ) else (
         echo [-] OptimizerRoblox.exe FAILED
     )
 )
 
-:: Check volt.exe (check TOOLS_DIR, then Downloads, then download)
-set "VOLT_SRC="
-if exist "!TOOLS_DIR!\volt.exe" set "VOLT_SRC=!TOOLS_DIR!\volt.exe"
-if "!VOLT_SRC!"=="" if exist "!USERPROFILE!\Downloads\volt.exe" set "VOLT_SRC=!USERPROFILE!\Downloads\volt.exe"
-
-if not "!VOLT_SRC!"=="" (
-    if not "!VOLT_SRC!"=="!TOOLS_DIR!\volt.exe" (
-        copy /Y "!VOLT_SRC!" "!TOOLS_DIR!\volt.exe" >nul
-        echo [+] volt.exe found in Downloads - copied to KaitunTools
-    ) else (
-        echo [+] volt.exe already in KaitunTools
-    )
+:: Check volt.exe (Desktop first, then Downloads)
+if exist "!DESKTOP!\volt.exe" (
+    echo [+] volt.exe already on Desktop
+) else if exist "!USERPROFILE!\Downloads\volt.exe" (
+    copy /Y "!USERPROFILE!\Downloads\volt.exe" "!DESKTOP!\volt.exe" >nul
+    echo [+] volt.exe copied from Downloads to Desktop
 ) else (
-    echo [4/5] Downloading volt.exe...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/volt.exe' -OutFile '!TOOLS_DIR!\volt.exe' -UseBasicParsing"
-    if exist "!TOOLS_DIR!\volt.exe" (echo [+] volt.exe saved) else (echo [-] volt.exe FAILED)
+    echo [4/5] Downloading volt.exe to Desktop...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/volt.exe' -OutFile '!DESKTOP!\volt.exe' -UseBasicParsing"
+    if exist "!DESKTOP!\volt.exe" (echo [+] volt.exe saved to Desktop) else (echo [-] volt.exe FAILED)
 )
-
-:: Open the tools folder on Desktop
-if exist "!TOOLS_DIR!" start "" "!TOOLS_DIR!"
 
 :: ===== [5] Check and Install FarmSync =====
 echo.
