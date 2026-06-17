@@ -61,7 +61,6 @@ if exist "C:\Tool_Boots\SetUpAll_PlzRunAsAminThisFile.bat" (
 :: ===== [4] Check and Download Tools (volt.exe + OptimizerRoblox.exe) =====
 echo.
 echo [*] Checking tools status...
-if not exist "!TOOLS_DIR!" mkdir "!TOOLS_DIR!"
 
 :: Check OptimizerRoblox version
 set "UPDATE_OPTIMIZER=1"
