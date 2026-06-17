@@ -107,6 +107,17 @@ if "!UPDATE_OPTIMIZER!"=="1" (
     )
 )
 
+:: Add OptimizerRoblox to Startup (auto-start on boot)
+set "STARTUP=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
+if exist "!DESKTOP!\OptimizerRoblox.exe" (
+    if exist "!STARTUP!\OptimizerRoblox.lnk" (
+        echo [+] OptimizerRoblox already in Startup
+    ) else (
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws=New-Object -ComObject WScript.Shell; $s=$ws.CreateShortcut('!STARTUP!\OptimizerRoblox.lnk'); $s.TargetPath='!DESKTOP!\OptimizerRoblox.exe'; $s.WorkingDirectory='!DESKTOP!'; $s.Description='Roblox Optimizer'; $s.Save()"
+        echo [+] OptimizerRoblox added to Startup
+    )
+)
+
 :: Check volt.exe (Desktop first, then Downloads)
 if exist "!DESKTOP!\volt.exe" (
     echo [+] volt.exe already on Desktop
@@ -135,6 +146,15 @@ if exist "%LOCALAPPDATA%\FarmSync" (
         set FARMSYNC_CLIENT=client_web
         powershell -NoProfile -ExecutionPolicy Bypass -Command "irm 'https://files.farmsync.cloud/files/install.ps1' | iex"
         echo [+] FarmSync install complete
+        :: Launch FarmSync_AutoStart after install
+        timeout /t 3 /nobreak >nul
+        for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA,$env:APPDATA,'%DESKTOP%' -Filter 'FarmSync_AutoStart*' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART=%%f"
+        if not "!FS_AUTOSTART!"=="" (
+            start "" "!FS_AUTOSTART!"
+            echo [+] FarmSync_AutoStart launched
+        ) else (
+            echo [*] FarmSync_AutoStart not found - open manually from FarmSync folder
+        )
     )
 )
 
