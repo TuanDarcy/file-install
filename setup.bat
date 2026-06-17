@@ -19,6 +19,15 @@ echo    KAITUN SETUP - Intelligent Updater
 echo  ==========================================
 echo.
 
+:: ===== Hỏi FarmSync key ngay từ đầu nếu chưa cài =====
+if not exist "!DESKTOP!\FarmSync" (
+    set /p "FARMSYNC_KEY=  [>] Enter FarmSync Key: "
+    if "!FARMSYNC_KEY!"=="" (
+        echo [!] No key entered - FarmSync will be skipped
+    )
+)
+echo.
+
 :: ===== [1] Check and Sync time with Cloudflare =====
 echo [*] Checking time sync status...
 for /f "tokens=*" %%a in ('powershell -NoProfile -Command "Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters' -Name 'NtpServer' 2^>$null | Select-Object -ExpandProperty NtpServer" 2^>nul') do set "NTP_CHECK=%%a"
@@ -89,6 +98,8 @@ if exist "!DESKTOP!\OptimizerRoblox.exe" (
 
     if "!REMOTE_VER!"=="!LOCAL_VER!" (
         echo [+] OptimizerRoblox.exe up to date ^(v!LOCAL_VER!^)
+        taskkill /f /im OptimizerRoblox.exe >nul 2>&1
+        timeout /t 2 /nobreak >nul
         powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process '!DESKTOP!\OptimizerRoblox.exe' -Verb RunAs"
         echo [+] OptimizerRoblox launched as Admin
         set "UPDATE_OPTIMIZER=0"
@@ -104,7 +115,9 @@ if "!UPDATE_OPTIMIZER!"=="1" (
     if exist "!DESKTOP!\OptimizerRoblox.exe" (
         echo !REMOTE_VER!>"!DESKTOP!\optimizer_ver.txt"
         echo [+] OptimizerRoblox.exe v!REMOTE_VER! saved to Desktop
-        :: Chạy với quyền admin
+        :: Kill cũ nếu đang chạy rồi mở bản mới
+        taskkill /f /im OptimizerRoblox.exe >nul 2>&1
+        timeout /t 2 /nobreak >nul
         powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process '!DESKTOP!\OptimizerRoblox.exe' -Verb RunAs"
         echo [+] OptimizerRoblox launched as Admin
     ) else (
@@ -138,13 +151,11 @@ if exist "!DESKTOP!\volt.exe" (
 :: ===== [5] Check and Install FarmSync =====
 echo.
 echo [*] Checking FarmSync status...
-if exist "%LOCALAPPDATA%\FarmSync" (
+if exist "!DESKTOP!\FarmSync" (
     echo [+] FarmSync already installed
 ) else (
-    echo.
-    set /p "FARMSYNC_KEY=  [>] Enter FarmSync Key: "
     if "!FARMSYNC_KEY!"=="" (
-        echo [!] Key cannot be empty - skipping FarmSync
+        echo [!] No key - skipping FarmSync
     ) else (
         echo [5/5] Installing FarmSync...
         set FARMSYNC_URL=https://downloads.farmsync.cloud/client_web.exe
@@ -177,9 +188,14 @@ if exist "%LOCALAPPDATA%\FarmSync" (
             )
         )
         if not "!FS_AUTOSTART!"=="" (
-            echo [+] FarmSync installed! Launching AutoStart...
-            start "" "!FS_AUTOSTART!"
-            echo [+] FarmSync_AutoStart launched
+            echo [+] FarmSync installed! Checking if already running...
+            tasklist /fi "imagename eq client_web.exe" 2>nul | find "client_web.exe" >nul
+            if not errorlevel 1 (
+                echo [+] FarmSync client already running - skipping AutoStart
+            ) else (
+                start "" "!FS_AUTOSTART!"
+                echo [+] FarmSync_AutoStart launched
+            )
         )
     )
 )
