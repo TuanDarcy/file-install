@@ -168,7 +168,7 @@ if exist "%LOCALAPPDATA%\FarmSync" (
         :WAIT_FARMSYNC
         powershell -NoProfile -Command "Start-Sleep -Seconds 3" >nul 2>&1
         set /a FS_WAIT+=3
-        for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path $env:LOCALAPPDATA,$env:APPDATA -Filter 'FarmSync_AutoStart*' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART=%%f"
+        for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path '$env:USERPROFILE\Desktop' -Filter 'FarmSync_AutoStart*' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART=%%f"
         if "!FS_AUTOSTART!"=="" (
             if !FS_WAIT! LSS 300 (
                 goto :WAIT_FARMSYNC
