@@ -79,18 +79,50 @@ if exist "!TOOLS_DIR!\OptimizerRoblox.exe" (
 )
 
 if "!UPDATE_OPTIMIZER!"=="1" (
-    echo [4/5] Downloading OptimizerRoblox.exe...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/OptimizerRoblox.exe' -OutFile '!TOOLS_DIR!\OptimizerRoblox.exe' -UseBasicParsing"
-    if exist "!TOOLS_DIR!\OptimizerRoblox.exe" (echo [+] OptimizerRoblox.exe saved) else (echo [-] OptimizerRoblox.exe FAILED)
+    echo.
+    echo [?] Do you already have OptimizerRoblox.exe somewhere else?
+    echo     Press Y to skip download, N to download now, or enter full path:
+    set /p "OPT_PATH=    "
+    
+    if /i "!OPT_PATH!"=="Y" (
+        echo [+] OptimizerRoblox.exe skipped - bring it manually to: !TOOLS_DIR!
+    ) else if /i "!OPT_PATH!"=="N" (
+        echo [4/5] Downloading OptimizerRoblox.exe...
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/OptimizerRoblox.exe' -OutFile '!TOOLS_DIR!\OptimizerRoblox.exe' -UseBasicParsing"
+        if exist "!TOOLS_DIR!\OptimizerRoblox.exe" (echo [+] OptimizerRoblox.exe saved) else (echo [-] OptimizerRoblox.exe FAILED)
+    ) else if exist "!OPT_PATH!" (
+        copy /Y "!OPT_PATH!" "!TOOLS_DIR!\OptimizerRoblox.exe" >nul
+        echo [+] OptimizerRoblox.exe copied from: !OPT_PATH!
+    ) else (
+        echo [4/5] Downloading OptimizerRoblox.exe...
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/OptimizerRoblox.exe' -OutFile '!TOOLS_DIR!\OptimizerRoblox.exe' -UseBasicParsing"
+        if exist "!TOOLS_DIR!\OptimizerRoblox.exe" (echo [+] OptimizerRoblox.exe saved) else (echo [-] OptimizerRoblox.exe FAILED)
+    )
 )
 
 :: Check volt.exe
 if exist "!TOOLS_DIR!\volt.exe" (
-    echo [+] volt.exe already downloaded
+    echo [+] volt.exe already in !TOOLS_DIR!
 ) else (
-    echo [4/5] Downloading volt.exe...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/volt.exe' -OutFile '!TOOLS_DIR!\volt.exe' -UseBasicParsing"
-    if exist "!TOOLS_DIR!\volt.exe" (echo [+] volt.exe saved) else (echo [-] volt.exe FAILED)
+    echo.
+    echo [?] Do you already have volt.exe somewhere else?
+    echo     Press Y to skip download, N to download now, or enter full path:
+    set /p "VOLT_PATH=    "
+    
+    if /i "!VOLT_PATH!"=="Y" (
+        echo [+] volt.exe skipped - bring it manually to: !TOOLS_DIR!
+    ) else if /i "!VOLT_PATH!"=="N" (
+        echo [4/5] Downloading volt.exe...
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/volt.exe' -OutFile '!TOOLS_DIR!\volt.exe' -UseBasicParsing"
+        if exist "!TOOLS_DIR!\volt.exe" (echo [+] volt.exe saved) else (echo [-] volt.exe FAILED)
+    ) else if exist "!VOLT_PATH!" (
+        copy /Y "!VOLT_PATH!" "!TOOLS_DIR!\volt.exe" >nul
+        echo [+] volt.exe copied from: !VOLT_PATH!
+    ) else (
+        echo [4/5] Downloading volt.exe...
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/volt.exe' -OutFile '!TOOLS_DIR!\volt.exe' -UseBasicParsing"
+        if exist "!TOOLS_DIR!\volt.exe" (echo [+] volt.exe saved) else (echo [-] volt.exe FAILED)
+    )
 )
 
 :: Open the tools folder on Desktop
