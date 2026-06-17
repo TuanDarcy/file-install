@@ -41,7 +41,7 @@ for /f "tokens=*" %%a in ('powershell -NoProfile -Command "(Get-ItemProperty -Pa
 
 if "!PAGING_CHECK:350000=!"=="!PAGING_CHECK!" (
     echo [2/5] Setting Virtual Memory to 350GB...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'PagingFiles' -Value @('C:\pagefile.sys 350000 350000') -PropertyType MultiString -Force | Out-Null"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'AutomaticManagedPagefile' -Value 0 -Type DWord -Force; New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'PagingFiles' -Value @('C:\pagefile.sys 350000 350000') -PropertyType MultiString -Force | Out-Null"
     echo [+] Virtual RAM set to 350GB (restart may be needed)
 ) else (
     echo [+] Virtual RAM already set to 350GB
