@@ -37,14 +37,21 @@ if "!NTP_CHECK!"=="time.cloudflare.com,0x1" (
 :: ===== [2] Check and Set Virtual RAM to 350GB =====
 echo.
 echo [*] Checking Virtual RAM status...
+set "VRAM_OK=0"
 for /f "tokens=*" %%a in ('powershell -NoProfile -Command "(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'PagingFiles' 2^>$null | Select-Object -ExpandProperty PagingFiles | Out-String).Trim()" 2^>nul') do set "PAGING_CHECK=%%a"
+for /f "tokens=*" %%a in ('powershell -NoProfile -Command "(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'AutomaticManagedPagefile' 2^>$null | Select-Object -ExpandProperty AutomaticManagedPagefile)" 2^>nul') do set "AUTO_MANAGED=%%a"
 
-if "!PAGING_CHECK:350000=!"=="!PAGING_CHECK!" (
+if "!PAGING_CHECK:350000=!"=="!PAGING_CHECK!" goto :set_vram
+if not "!AUTO_MANAGED!"=="0" goto :set_vram
+set "VRAM_OK=1"
+
+:set_vram
+if "!VRAM_OK!"=="1" (
+    echo [+] Virtual RAM already set to 350GB
+) else (
     echo [2/5] Setting Virtual Memory to 350GB...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'AutomaticManagedPagefile' -Value 0 -Type DWord -Force; New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'PagingFiles' -Value @('C:\pagefile.sys 350000 350000') -PropertyType MultiString -Force | Out-Null"
-    echo [+] Virtual RAM set to 350GB (restart may be needed)
-) else (
-    echo [+] Virtual RAM already set to 350GB
+    echo [+] Virtual RAM set to 350GB (restart required to apply)
 )
 
 :: ===== [3] Check and Install CuongBoots =====
