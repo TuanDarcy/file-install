@@ -35,7 +35,7 @@ for /f "tokens=*" %%a in ('powershell -NoProfile -Command "Get-ItemProperty -Pat
 if "!NTP_CHECK!"=="time.cloudflare.com,0x1" (
     echo [+] Time already synced with Cloudflare
 ) else (
-    echo [1/5] Syncing time with time.cloudflare.com...
+    echo [1/6] Syncing time with time.cloudflare.com...
     w32tm /config /manualpeerlist:"time.cloudflare.com" /syncfromflags:manual /reliable:YES /update >nul 2>&1
     net stop w32tm >nul 2>&1
     net start w32tm >nul 2>&1
@@ -58,7 +58,7 @@ set "VRAM_OK=1"
 if "!VRAM_OK!"=="1" (
     echo [+] Virtual RAM already set to 350GB
 ) else (
-    echo [2/5] Setting Virtual Memory to 350GB...
+    echo [2/6] Setting Virtual Memory to 350GB...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'AutomaticManagedPagefile' -Value 0 -Type DWord -Force; New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'PagingFiles' -Value @('C:\pagefile.sys 350000 350000') -PropertyType MultiString -Force | Out-Null"
     echo [+] Virtual RAM set to 350GB (restart required to apply)
 )
@@ -69,7 +69,7 @@ echo [*] Checking CuongBoots status...
 if exist "C:\Tool_Boots\SetUpAll_PlzRunAsAminThisFile.bat" (
     echo [+] CuongBoots already installed
 ) else (
-    echo [3/5] Installing CuongBoots...
+    echo [3/6] Installing CuongBoots...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-MpPreference -DisableRealtimeMonitoring $true; Add-MpPreference -ExclusionPath 'C:\Tool_Boots'; Invoke-WebRequest -Uri 'https://apa.cdev.my/download/CuongBoots_V1.2.zip' -OutFile \"$env:TEMP\CuongBoots.zip\" -UseBasicParsing; Expand-Archive -Path \"$env:TEMP\CuongBoots.zip\" -DestinationPath 'C:\Tool_Boots' -Force; Start-Process -FilePath 'C:\Tool_Boots\SetUpAll_PlzRunAsAminThisFile.bat' -Verb RunAs; Start-Process 'C:\Tool_Boots'"
     echo [+] CuongBoots launched
 )
@@ -124,7 +124,7 @@ if exist "!DESKTOP!\OptimizerRoblox.exe" (
 )
 
 if "!UPDATE_OPTIMIZER!"=="1" (
-    echo [4/5] Downloading OptimizerRoblox.exe to Desktop...
+    echo [4/6] Downloading OptimizerRoblox.exe to Desktop...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/OptimizerRoblox.exe' -OutFile '!DESKTOP!\OptimizerRoblox.exe' -UseBasicParsing"
     if exist "!DESKTOP!\OptimizerRoblox.exe" (
         echo !REMOTE_VER!>"!DESKTOP!\optimizer_ver.txt"
@@ -157,12 +157,38 @@ if exist "!DESKTOP!\volt.exe" (
     copy /Y "!USERPROFILE!\Downloads\volt.exe" "!DESKTOP!\volt.exe" >nul
     echo [+] volt.exe copied from Downloads to Desktop
 ) else (
-    echo [4/5] Downloading volt.exe to Desktop...
+    echo [4/6] Downloading volt.exe to Desktop...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/volt.exe' -OutFile '!DESKTOP!\volt.exe' -UseBasicParsing"
     if exist "!DESKTOP!\volt.exe" (echo [+] volt.exe saved to Desktop) else (echo [-] volt.exe FAILED)
 )
 
-:: ===== [5] Check and Install FarmSync =====
+:: ===== [5] Check and Download 24122024 Folder =====
+echo.
+echo [*] Checking 24122024 folder status...
+set "TOOLS_24122024_DIR=!DESKTOP!\24122024"
+set "TOOLS_24122024_OK=1"
+if not exist "!TOOLS_24122024_DIR!\dControl.ini" set "TOOLS_24122024_OK=0"
+if not exist "!TOOLS_24122024_DIR!\Defender_Settings.vbs" set "TOOLS_24122024_OK=0"
+if not exist "!TOOLS_24122024_DIR!\ReadMe.txt" set "TOOLS_24122024_OK=0"
+
+if "!TOOLS_24122024_OK!"=="1" (
+    echo [+] 24122024 folder already on Desktop
+) else (
+    echo [5/6] Downloading 24122024 folder to Desktop...
+    if not exist "!TOOLS_24122024_DIR!" mkdir "!TOOLS_24122024_DIR!"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$dest='!TOOLS_24122024_DIR!'; Invoke-WebRequest '%REPO_RAW%/24122024/dControl.ini' -OutFile (Join-Path $dest 'dControl.ini') -UseBasicParsing; Invoke-WebRequest '%REPO_RAW%/24122024/Defender_Settings.vbs' -OutFile (Join-Path $dest 'Defender_Settings.vbs') -UseBasicParsing; Invoke-WebRequest '%REPO_RAW%/24122024/ReadMe.txt' -OutFile (Join-Path $dest 'ReadMe.txt') -UseBasicParsing"
+    set "TOOLS_24122024_OK=1"
+    if not exist "!TOOLS_24122024_DIR!\dControl.ini" set "TOOLS_24122024_OK=0"
+    if not exist "!TOOLS_24122024_DIR!\Defender_Settings.vbs" set "TOOLS_24122024_OK=0"
+    if not exist "!TOOLS_24122024_DIR!\ReadMe.txt" set "TOOLS_24122024_OK=0"
+    if "!TOOLS_24122024_OK!"=="1" (
+        echo [+] 24122024 folder saved to Desktop
+    ) else (
+        echo [-] 24122024 folder download FAILED
+    )
+)
+
+:: ===== [6] Check and Install FarmSync =====
 echo.
 echo [*] Checking FarmSync status...
 if exist "!DESKTOP!\FarmSync" (
@@ -171,7 +197,7 @@ if exist "!DESKTOP!\FarmSync" (
     if "!FARMSYNC_KEY!"=="" (
         echo [!] No key - skipping FarmSync
     ) else (
-        echo [5/5] Installing FarmSync...
+        echo [6/6] Installing FarmSync...
         set FARMSYNC_URL=https://downloads.farmsync.cloud/client_web.exe
         set FARMSYNC_CLIENT=client_web
         :: Chạy FarmSync trong cửa sổ riêng - tránh nó thoát CMD main
