@@ -12,6 +12,7 @@ if %errorLevel% neq 0 (
 set "DESKTOP=%USERPROFILE%\Desktop"
 set "DOWNLOADS=%USERPROFILE%\Downloads"
 set "REPO_RAW=https://raw.githubusercontent.com/TuanDarcy/file-install/main"
+set "CONFIG_SOURCE=%~dp0MachineMonitor_config.json"
 set "FARMSYNC_KEY="
 
 echo.
@@ -247,6 +248,10 @@ if not exist "!MONITOR_CONFIG!" (
     )
 ) else (
     echo [+] MachineMonitor config already exists - keeping user settings
+)
+
+if exist "!CONFIG_SOURCE!" if exist "!MONITOR_CONFIG!" (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$src='!CONFIG_SOURCE!'; $dst='!MONITOR_CONFIG!'; try { $srcCfg = Get-Content -Path $src -Raw | ConvertFrom-Json; $dstCfg = Get-Content -Path $dst -Raw | ConvertFrom-Json; if ($srcCfg.webhook_url) { $dstCfg.webhook_url = $srcCfg.webhook_url }; $dstCfg | ConvertTo-Json -Depth 8 | Set-Content -Path $dst -Encoding UTF8; Write-Output '[+] MachineMonitor webhook_url synced from setup config' } catch { Write-Output ('[-] MachineMonitor webhook sync failed: ' + $_.Exception.Message) }"
 )
 
 if exist "!MONITOR_EXE!" (
