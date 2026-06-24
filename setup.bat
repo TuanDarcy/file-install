@@ -125,26 +125,26 @@ for /f "tokens=*" %%v in ('powershell -NoProfile -Command "try{(Invoke-WebReques
 
 :: Fast-path: if Downloads\OptimizerRoblox already has correct version and required files, skip downloading.
 if exist "!OPTIMIZER_DIR!\OptimizerRoblox.exe" (
-    set "LOCAL_VER="
-    if exist "!OPTIMIZER_VER_FILE!" (
-        set /p LOCAL_VER=<"!OPTIMIZER_VER_FILE!"
-        set "LOCAL_VER=!LOCAL_VER: =!"
-    ) else (
-        for /f "tokens=*" %%v in ('powershell -NoProfile -Command "(Get-Item '!OPTIMIZER_DIR!\OptimizerRoblox.exe').VersionInfo.FileVersion" 2^>nul') do set "LOCAL_VER=%%v"
-    )
+    set "OPTIMIZER_REQUIRED_RESULT="
+    for /f "usebackq delims=" %%r in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$d='!OPTIMIZER_DIR!'; $req=@('OptimizerRoblox.exe','_internal\libcrypto-3.dll','_internal\libssl-3.dll','_internal\libffi-8.dll','_internal\psutil\_psutil_windows.pyd'); $missing=@(); foreach($f in $req){ if(-not (Test-Path (Join-Path $d $f) -PathType Leaf)){ $missing += $f } }; if($missing.Count -eq 0){ 'OK' } else { 'MISSING: ' + ($missing -join ', ') }" 2^>nul`) do set "OPTIMIZER_REQUIRED_RESULT=%%r"
+    if /I "!OPTIMIZER_REQUIRED_RESULT!"=="OK" (
+        set "LOCAL_VER="
+        if exist "!OPTIMIZER_VER_FILE!" (
+            set /p LOCAL_VER=<"!OPTIMIZER_VER_FILE!"
+            set "LOCAL_VER=!LOCAL_VER: =!"
+        ) else (
+            for /f "tokens=*" %%v in ('powershell -NoProfile -Command "(Get-Item '!OPTIMIZER_DIR!\OptimizerRoblox.exe').VersionInfo.FileVersion" 2^>nul') do set "LOCAL_VER=%%v"
+        )
 
-    if "!LOCAL_VER!"=="!REMOTE_VER!" (
-        set "OPTIMIZER_REQUIRED_RESULT="
-        for /f "usebackq delims=" %%r in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$d='!OPTIMIZER_DIR!'; $req=@('OptimizerRoblox.exe','_internal\libcrypto-3.dll','_internal\libssl-3.dll','_internal\libffi-8.dll','_internal\psutil\_psutil_windows.pyd'); $missing=@(); foreach($f in $req){ if(-not (Test-Path (Join-Path $d $f) -PathType Leaf)){ $missing += $f } }; if($missing.Count -eq 0){ 'OK' } else { 'MISSING: ' + ($missing -join ', ') }" 2^>nul`) do set "OPTIMIZER_REQUIRED_RESULT=%%r"
-        if /I "!OPTIMIZER_REQUIRED_RESULT!"=="OK" (
+        if "!LOCAL_VER!"=="!REMOTE_VER!" (
             set "ACTIVE_OPTIMIZER_DIR=!OPTIMIZER_DIR!"
             set "ACTIVE_OPTIMIZER_EXE=!OPTIMIZER_DIR!\OptimizerRoblox.exe"
             set "ACTIVE_OPTIMIZER_VER_FILE=!OPTIMIZER_VER_FILE!"
             set "UPDATE_OPTIMIZER=0"
             echo [+] OptimizerRoblox folder in Downloads is complete and up to date ^(v!REMOTE_VER!^) - skip download
-        ) else (
-            if not "!OPTIMIZER_REQUIRED_RESULT!"=="" echo [!] Existing OptimizerRoblox folder is incomplete: !OPTIMIZER_REQUIRED_RESULT!
         )
+    ) else (
+        if not "!OPTIMIZER_REQUIRED_RESULT!"=="" echo [!] Existing OptimizerRoblox folder is incomplete: !OPTIMIZER_REQUIRED_RESULT!
     )
 )
 
@@ -231,6 +231,7 @@ if exist "!ACTIVE_OPTIMIZER_EXE!" (
 :: Add OptimizerRoblox to Startup (auto-start on boot)
 set "STARTUP=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
 if exist "!ACTIVE_OPTIMIZER_EXE!" (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$startup='!STARTUP!'; Get-ChildItem -Path $startup -Filter '*.lnk' -ErrorAction SilentlyContinue | ForEach-Object { try { $s=(New-Object -ComObject WScript.Shell).CreateShortcut($_.FullName); $tp=($s.TargetPath + '').ToLower(); if($_.Name -ieq 'OptimizerRoblox.lnk' -or $tp -like '*optimizerroblox*'){ Remove-Item $_.FullName -Force -ErrorAction SilentlyContinue } } catch {} }"
     powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws=New-Object -ComObject WScript.Shell; $s=$ws.CreateShortcut('!STARTUP!\OptimizerRoblox.lnk'); $s.TargetPath='!ACTIVE_OPTIMIZER_EXE!'; $s.WorkingDirectory='!ACTIVE_OPTIMIZER_DIR!'; $s.Description='Roblox Optimizer'; $s.Save()"
     echo [+] OptimizerRoblox Startup shortcut updated
 )
