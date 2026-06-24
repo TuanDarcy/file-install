@@ -357,6 +357,9 @@ echo.
 echo [*] Sending setup completion webhook...
 set "FS_AUTOSTART_NOTIFY="
 for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path \"!DESKTOP!\" -Filter \"FarmSync_AutoStart*\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART_NOTIFY=%%f"
+if not exist "%~dp0setup_notify.ps1" (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest '%REPO_RAW%/setup_notify.ps1' -OutFile '%~dp0setup_notify.ps1' -UseBasicParsing -TimeoutSec 10 } catch {}"
+)
 if exist "%~dp0setup_notify.ps1" (
     powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup_notify.ps1" -DesktopPath "!DESKTOP!" -AutoStartPath "!FS_AUTOSTART_NOTIFY!"
 ) else (
