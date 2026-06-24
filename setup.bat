@@ -425,5 +425,5 @@ echo  ==========================================
 echo   Setup complete!
 echo  ==========================================
 echo.
-pause
+set /p "__EXIT_PROMPT=Press Enter to exit..."
 exit /b 0
