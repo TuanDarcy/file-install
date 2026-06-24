@@ -380,7 +380,13 @@ set "NOTIFY_SCRIPT=%~dp0setup_notify.ps1"
 for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path \"!DESKTOP!\" -Filter \"FarmSync_AutoStart*\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART_NOTIFY=%%f"
 if exist "!DESKTOP!\setup_notify.ps1" set "NOTIFY_SCRIPT=!DESKTOP!\setup_notify.ps1"
 if not exist "!NOTIFY_SCRIPT!" (
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest '%REPO_RAW%/setup_notify.ps1' -OutFile '!DESKTOP!\setup_notify.ps1' -UseBasicParsing -TimeoutSec 10 } catch {}"
+    set "NOTIFY_FETCH_RESULT="
+    for /f "tokens=*" %%r in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest '%REPO_RAW%/setup_notify.ps1' -OutFile '!DESKTOP!\setup_notify.ps1' -UseBasicParsing -TimeoutSec 10; 'OK' } catch { 'ERR: ' + $_.Exception.Message }" 2^>nul') do set "NOTIFY_FETCH_RESULT=%%r"
+    if /I "!NOTIFY_FETCH_RESULT!"=="OK" (
+        echo [+] setup_notify.ps1 downloaded to Desktop
+    ) else (
+        if not "!NOTIFY_FETCH_RESULT!"=="" echo [!] setup_notify.ps1 download failed: !NOTIFY_FETCH_RESULT!
+    )
     if exist "!DESKTOP!\setup_notify.ps1" set "NOTIFY_SCRIPT=!DESKTOP!\setup_notify.ps1"
 )
 if exist "!NOTIFY_SCRIPT!" (
