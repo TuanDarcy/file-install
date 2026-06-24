@@ -3,8 +3,10 @@
 ## Chạy 1 lệnh duy nhất trong CMD (Run as Administrator)
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://raw.githubusercontent.com/TuanDarcy/file-install/main/setup.bat' -OutFile \"%TEMP%\kaitun_setup.bat\" -UseBasicParsing; Start-Process \"%TEMP%\kaitun_setup.bat\" -Verb RunAs"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$u='https://raw.githubusercontent.com/TuanDarcy/file-install/main/setup.bat?ts='+(Get-Date).Ticks; $f=Join-Path $env:TEMP ('kaitun_setup_'+(Get-Random)+'.bat'); Invoke-WebRequest $u -OutFile $f -UseBasicParsing; Start-Process $f -Verb RunAs"
 ```
+
+Ghi chú: chỉ dùng lệnh trên để tránh cache bản setup cũ.
 
 ## Setup sẽ tự động
 
@@ -14,15 +16,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https
 4. Cài CuongBoots nếu chưa có.
 5. Thêm AutoRunBoots vào Startup nếu tìm thấy file trong `C:\Tool_Boots`.
 6. Kiểm tra `Downloads\OptimizerRoblox` theo thứ tự: đủ file bắt buộc -> đúng version từ Git.
-7. Nếu đủ file + đúng version thì skip tải; nếu thiếu file hoặc lệch version thì tải gói `OptimizerRoblox_onedir.zip`, giải nén và cập nhật lại.
-8. Kill bản Optimizer cũ và mở lại bản mới với quyền Admin.
-9. Thêm Optimizer vào Startup (chỉ dọn shortcut cũ của Optimizer, không đụng app khác).
-10. Tải `volt.exe` ra Desktop nếu thiếu.
-11. Tải folder `24122024` ra Desktop với đủ file bên trong.
-12. Tải hoặc update `MachineMonitor.exe` ra Desktop.
-13. Tạo `MachineMonitor.lnk` trong Startup để monitor tự chạy cùng máy.
-14. Cài FarmSync trong cửa sổ riêng và tự mở FarmSync_AutoStart khi cài xong.
-15. Gửi webhook xác nhận setup hoàn tất:
+7. Nếu thiếu `OptimizerRoblox.exe` hoặc lệch version thì ưu tiên tải riêng `OptimizerRoblox.exe` trước (exe-only update/repair).
+8. Chỉ fallback tải `OptimizerRoblox_onedir.zip` khi exe-only update lỗi hoặc folder còn thiếu dependency `_internal`.
+9. Kill bản Optimizer cũ và mở lại bản mới với quyền Admin.
+10. Thêm Optimizer vào Startup (chỉ dọn shortcut cũ của Optimizer, không đụng app khác).
+11. Tải `volt.exe` ra Desktop nếu thiếu.
+12. Tải folder `24122024` ra Desktop với đủ file bên trong.
+13. Tải hoặc update `MachineMonitor.exe` ra Desktop.
+14. Tạo `MachineMonitor.lnk` trong Startup để monitor tự chạy cùng máy.
+15. Cài FarmSync trong cửa sổ riêng và tự mở FarmSync_AutoStart khi cài xong.
+16. Gửi webhook xác nhận setup hoàn tất:
     - Tự đọc title FarmSync để lấy `Device XX`.
     - Nếu chưa thấy title Device thì tự chạy `FarmSync_AutoStart*.bat` và đợi detect.
     - Gọi API devices để map ra `device_note`.
