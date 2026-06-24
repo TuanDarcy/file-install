@@ -13,19 +13,20 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https
 3. Set Virtual RAM 350GB qua Registry (tắt AutoManaged + set PagingFiles).
 4. Cài CuongBoots nếu chưa có.
 5. Thêm AutoRunBoots vào Startup nếu tìm thấy file trong `C:\Tool_Boots`.
-6. Tải hoặc update `OptimizerRoblox.exe` ra Desktop.
-7. Kill bản Optimizer cũ và mở lại bản mới với quyền Admin.
-8. Thêm Optimizer vào Startup.
-9. Tải `volt.exe` ra Desktop nếu thiếu.
-10. Tải folder `24122024` ra Desktop với đủ file bên trong.
-11. Tải hoặc update `MachineMonitor.exe` ra Desktop.
-12. Tạo `MachineMonitor.lnk` trong Startup để monitor tự chạy cùng máy.
-13. Cài FarmSync trong cửa sổ riêng và tự mở FarmSync_AutoStart khi cài xong.
-14. Gửi webhook xác nhận setup hoàn tất:
-	- Tự đọc title FarmSync để lấy `Device XX`.
-	- Nếu chưa thấy title Device thì tự chạy `FarmSync_AutoStart*.bat` và đợi detect.
-	- Gọi API devices để map ra `device_note`.
-	- Gửi Discord webhook kèm tên máy, device, note và title.
+6. Kiểm tra `Downloads\OptimizerRoblox` theo thứ tự: đủ file bắt buộc -> đúng version từ Git.
+7. Nếu đủ file + đúng version thì skip tải; nếu thiếu file hoặc lệch version thì tải gói `OptimizerRoblox_onedir.zip`, giải nén và cập nhật lại.
+8. Kill bản Optimizer cũ và mở lại bản mới với quyền Admin.
+9. Thêm Optimizer vào Startup (chỉ dọn shortcut cũ của Optimizer, không đụng app khác).
+10. Tải `volt.exe` ra Desktop nếu thiếu.
+11. Tải folder `24122024` ra Desktop với đủ file bên trong.
+12. Tải hoặc update `MachineMonitor.exe` ra Desktop.
+13. Tạo `MachineMonitor.lnk` trong Startup để monitor tự chạy cùng máy.
+14. Cài FarmSync trong cửa sổ riêng và tự mở FarmSync_AutoStart khi cài xong.
+15. Gửi webhook xác nhận setup hoàn tất:
+    - Tự đọc title FarmSync để lấy `Device XX`.
+    - Nếu chưa thấy title Device thì tự chạy `FarmSync_AutoStart*.bat` và đợi detect.
+    - Gọi API devices để map ra `device_note`.
+    - Gửi Discord webhook kèm tên máy, device, note và title.
 
 ## MachineMonitor (bot theo dõi riêng)
 
@@ -60,3 +61,4 @@ Ghi chú: nếu dùng `Authorization`, monitor sẽ tự thêm tiền tố `Bear
 
 1. Không commit webhook hoặc token thật lên GitHub.
 2. Nếu repo chuyển sang private, link raw công khai trong `setup.bat` sẽ không tải được trên máy khác.
+3. File `OptimizerRoblox_onedir.zip` trong Downloads chỉ là file tạm để giải nén; setup sẽ tự xóa ở cuối bước Optimizer. Nếu setup bị dừng giữa chừng, file này có thể còn lại và lần chạy sau sẽ tự ghi đè/tải lại.
