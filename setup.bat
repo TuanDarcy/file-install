@@ -1,6 +1,7 @@
 @echo off
 setlocal EnableDelayedExpansion
 title KAITUN SETUP - Intelligent Updater
+set "SCRIPT_BUILD=2026-06-25-b84488b"
 
 :: ===== Self-elevate to admin if needed =====
 net session >nul 2>&1
@@ -18,6 +19,7 @@ set "FARMSYNC_KEY="
 echo.
 echo  ==========================================
 echo    KAITUN SETUP - Intelligent Updater
+echo    Build: !SCRIPT_BUILD!
 echo  ==========================================
 echo.
 
@@ -93,6 +95,7 @@ if exist "!STARTUP!\AutoRunBoots.lnk" (
 :: ===== [4] Check and Download Tools (volt.exe + OptimizerRoblox.exe) =====
 echo.
 echo [*] Checking tools status...
+echo [*] Setup build marker: !SCRIPT_BUILD!
 
 :: Check OptimizerRoblox version
 set "UPDATE_OPTIMIZER=1"
