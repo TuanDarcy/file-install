@@ -102,6 +102,8 @@ set "OPTIMIZER_EXE=!OPTIMIZER_DIR!\OptimizerRoblox.exe"
 set "OPTIMIZER_VER_FILE=!OPTIMIZER_DIR!\optimizer_ver.txt"
 set "OPTIMIZER_ZIP=!DOWNLOADS!\OptimizerRoblox_onedir.zip"
 set "OPTIMIZER_DESKTOP_SHORTCUT=!DESKTOP!\OptimizerRoblox.lnk"
+set "LEGACY_OPTIMIZER_DIR=!DESKTOP!\OptimizerRoblox"
+set "LEGACY_OPTIMIZER_EXE=!DESKTOP!\OptimizerRoblox.exe"
 
 :: Get remote version
 for /f "tokens=*" %%v in ('powershell -NoProfile -Command "try{(Invoke-WebRequest '%REPO_RAW%/version.txt' -UseBasicParsing -TimeoutSec 5).Content.Trim()}catch{'0'}" 2^>nul') do set "REMOTE_VER=%%v"
@@ -162,6 +164,16 @@ if exist "!OPTIMIZER_EXE!" (
     echo [+] OptimizerRoblox launched as Admin
 )
 
+if exist "!LEGACY_OPTIMIZER_DIR!" (
+    rmdir /s /q "!LEGACY_OPTIMIZER_DIR!" >nul 2>&1
+)
+if exist "!LEGACY_OPTIMIZER_EXE!" (
+    del /f /q "!LEGACY_OPTIMIZER_EXE!" >nul 2>&1
+)
+if exist "!OPTIMIZER_ZIP!" (
+    del /f /q "!OPTIMIZER_ZIP!" >nul 2>&1
+)
+
 :: Create Desktop shortcut for OptimizerRoblox
 if exist "!OPTIMIZER_EXE!" (
     powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws=New-Object -ComObject WScript.Shell; $s=$ws.CreateShortcut('!OPTIMIZER_DESKTOP_SHORTCUT!'); $s.TargetPath='!OPTIMIZER_EXE!'; $s.WorkingDirectory='!OPTIMIZER_DIR!'; $s.Description='Roblox Optimizer'; $s.Save()"
@@ -171,12 +183,8 @@ if exist "!OPTIMIZER_EXE!" (
 :: Add OptimizerRoblox to Startup (auto-start on boot)
 set "STARTUP=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
 if exist "!OPTIMIZER_EXE!" (
-    if exist "!STARTUP!\OptimizerRoblox.lnk" (
-        echo [+] OptimizerRoblox already in Startup
-    ) else (
-        powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws=New-Object -ComObject WScript.Shell; $s=$ws.CreateShortcut('!STARTUP!\OptimizerRoblox.lnk'); $s.TargetPath='!OPTIMIZER_EXE!'; $s.WorkingDirectory='!OPTIMIZER_DIR!'; $s.Description='Roblox Optimizer'; $s.Save()"
-        echo [+] OptimizerRoblox added to Startup
-    )
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws=New-Object -ComObject WScript.Shell; $s=$ws.CreateShortcut('!STARTUP!\OptimizerRoblox.lnk'); $s.TargetPath='!OPTIMIZER_EXE!'; $s.WorkingDirectory='!OPTIMIZER_DIR!'; $s.Description='Roblox Optimizer'; $s.Save()"
+    echo [+] OptimizerRoblox Startup shortcut updated
 )
 
 :: Check volt.exe (Desktop first, then Downloads)
@@ -454,5 +462,17 @@ echo  ==========================================
 echo   Setup complete!
 echo  ==========================================
 echo.
-powershell -NoProfile -Command "Read-Host 'Press Enter to exit' | Out-Null"
+set "EXIT_WAIT_CMD=%TEMP%\kaitun_exit_wait_%RANDOM%.cmd"
+(
+    echo @echo off
+    echo title KAITUN Setup Complete
+    echo echo.
+    echo echo  ==========================================
+    echo echo   Setup complete!
+    echo echo  ==========================================
+    echo echo.
+    echo powershell -NoProfile -Command "Read-Host 'Press Enter to exit' ^| Out-Null"
+) > "!EXIT_WAIT_CMD!"
+start /wait "KAITUN Setup Complete" cmd /c "!EXIT_WAIT_CMD!"
+del /f /q "!EXIT_WAIT_CMD!" >nul 2>&1
 exit /b 0
