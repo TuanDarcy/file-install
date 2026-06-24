@@ -122,18 +122,33 @@ if exist "!OPTIMIZER_DESKTOP_SHORTCUT!" (
 
 :: Get remote version
 for /f "tokens=*" %%v in ('powershell -NoProfile -Command "try{(Invoke-WebRequest '%REPO_RAW%/version.txt' -UseBasicParsing -TimeoutSec 5).Content.Trim()}catch{'0'}" 2^>nul') do set "REMOTE_VER=%%v"
+if "!REMOTE_VER!"=="0" (
+    echo [!] Could not read remote Optimizer version - update check may be forced
+) else (
+    echo [*] Remote Optimizer version: !REMOTE_VER!
+)
+
+if exist "!OPTIMIZER_DIR!" (
+    echo [*] Found folder: !OPTIMIZER_DIR!
+) else (
+    echo [*] Optimizer folder not found in Downloads yet
+)
 
 :: Fast-path: if Downloads\OptimizerRoblox already has correct version and required files, skip downloading.
 if exist "!OPTIMIZER_DIR!\OptimizerRoblox.exe" (
+    echo [*] Found OptimizerRoblox.exe in Downloads folder - checking required files...
     set "OPTIMIZER_REQUIRED_RESULT="
     for /f "usebackq delims=" %%r in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$d='!OPTIMIZER_DIR!'; $req=@('OptimizerRoblox.exe','_internal\libcrypto-3.dll','_internal\libssl-3.dll','_internal\libffi-8.dll','_internal\psutil\_psutil_windows.pyd'); $missing=@(); foreach($f in $req){ if(-not (Test-Path (Join-Path $d $f) -PathType Leaf)){ $missing += $f } }; if($missing.Count -eq 0){ 'OK' } else { 'MISSING: ' + ($missing -join ', ') }" 2^>nul`) do set "OPTIMIZER_REQUIRED_RESULT=%%r"
     if /I "!OPTIMIZER_REQUIRED_RESULT!"=="OK" (
+        echo [*] Required files check: OK
         set "LOCAL_VER="
         if exist "!OPTIMIZER_VER_FILE!" (
             set /p LOCAL_VER=<"!OPTIMIZER_VER_FILE!"
             set "LOCAL_VER=!LOCAL_VER: =!"
+            echo [*] Local version from optimizer_ver.txt: !LOCAL_VER!
         ) else (
             for /f "tokens=*" %%v in ('powershell -NoProfile -Command "(Get-Item '!OPTIMIZER_DIR!\OptimizerRoblox.exe').VersionInfo.FileVersion" 2^>nul') do set "LOCAL_VER=%%v"
+            echo [*] Local version from exe metadata: !LOCAL_VER!
         )
 
         if "!LOCAL_VER!"=="!REMOTE_VER!" (
@@ -142,10 +157,17 @@ if exist "!OPTIMIZER_DIR!\OptimizerRoblox.exe" (
             set "ACTIVE_OPTIMIZER_VER_FILE=!OPTIMIZER_VER_FILE!"
             set "UPDATE_OPTIMIZER=0"
             echo [+] OptimizerRoblox folder in Downloads is complete and up to date ^(v!REMOTE_VER!^) - skip download
+        ) else (
+            echo [*] Version mismatch in Downloads folder ^(local=!LOCAL_VER!, remote=!REMOTE_VER!^) - will download update
         )
     ) else (
         if not "!OPTIMIZER_REQUIRED_RESULT!"=="" echo [!] Existing OptimizerRoblox folder is incomplete: !OPTIMIZER_REQUIRED_RESULT!
+        echo [*] Incomplete folder cannot be reused - will download package
     )
+)
+
+if exist "!OPTIMIZER_DIR!" if not exist "!OPTIMIZER_DIR!\OptimizerRoblox.exe" (
+    echo [*] Folder exists but missing OptimizerRoblox.exe - will download package
 )
 
 if not exist "!ACTIVE_OPTIMIZER_EXE!" (
@@ -182,13 +204,23 @@ if exist "!ACTIVE_OPTIMIZER_EXE!" (
 
 if "!UPDATE_OPTIMIZER!"=="1" (
     echo [4/8] Downloading OptimizerRoblox onedir package...
-    for /f "usebackq delims=" %%p in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $zip='!OPTIMIZER_ZIP!'; $zipUrl='!REPO_RAW!/OptimizerRoblox_onedir.zip'; if(Test-Path $zip){ Remove-Item $zip -Force -ErrorAction SilentlyContinue }; $downloadOk=$false; for($i=1; $i -le 2 -and -not $downloadOk; $i++){ try { Invoke-WebRequest $zipUrl -OutFile $zip -UseBasicParsing; $stageRoot=Join-Path $env:TEMP ('OptimizerRoblox_stage_' + [guid]::NewGuid().ToString('N')); New-Item -ItemType Directory -Path $stageRoot -Force | Out-Null; Expand-Archive -Path $zip -DestinationPath $stageRoot -Force; $downloadOk=$true } catch { if(Test-Path $zip){ Remove-Item $zip -Force -ErrorAction SilentlyContinue }; if($i -eq 2){ throw } } }; $stageDir=Join-Path $stageRoot 'OptimizerRoblox'; if(-not (Test-Path $stageDir)){ $child=Get-ChildItem -Path $stageRoot -Directory | Select-Object -First 1; if($child){$stageDir=$child.FullName} }; if(-not (Test-Path (Join-Path $stageDir 'OptimizerRoblox.exe') -PathType Leaf)){ throw 'Optimizer package missing OptimizerRoblox.exe after extract' }; $target='!OPTIMIZER_DIR!'; $final=$target; $killCmd={ taskkill /f /im OptimizerRoblox.exe *> $null; taskkill /f /im RobloxPlayerBeta.exe *> $null; Start-Sleep -Milliseconds 1200 }; try { if(Test-Path $target){ Remove-Item $target -Recurse -Force -ErrorAction Stop }; Move-Item -Path $stageDir -Destination $target -Force -ErrorAction Stop } catch { & $killCmd; try { if(Test-Path $target){ Remove-Item $target -Recurse -Force -ErrorAction Stop }; Move-Item -Path $stageDir -Destination $target -Force -ErrorAction Stop } catch { $verTarget=Join-Path '!DOWNLOADS!' ('OptimizerRoblox_v' + '!REMOTE_VER!'); if(Test-Path $verTarget){ Remove-Item $verTarget -Recurse -Force -ErrorAction SilentlyContinue }; New-Item -ItemType Directory -Path $verTarget -Force | Out-Null; Copy-Item -Path (Join-Path $stageDir '*') -Destination $verTarget -Recurse -Force; $final=$verTarget } }; $verFile=Join-Path $final 'optimizer_ver.txt'; Set-Content -Path $verFile -Value '!REMOTE_VER!' -Encoding Ascii; Write-Output $final"`) do set "ACTIVE_OPTIMIZER_DIR=%%p"
-    set "ACTIVE_OPTIMIZER_EXE=!ACTIVE_OPTIMIZER_DIR!\OptimizerRoblox.exe"
-    set "ACTIVE_OPTIMIZER_VER_FILE=!ACTIVE_OPTIMIZER_DIR!\optimizer_ver.txt"
-    if exist "!ACTIVE_OPTIMIZER_EXE!" (
-        echo [+] OptimizerRoblox onedir v!REMOTE_VER! saved to !ACTIVE_OPTIMIZER_DIR!
+    set "OPTIMIZER_DL_RESULT="
+    for /f "usebackq delims=" %%p in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; try { $zip='!OPTIMIZER_ZIP!'; $zipUrl='!REPO_RAW!/OptimizerRoblox_onedir.zip'; if(Test-Path $zip){ Remove-Item $zip -Force -ErrorAction SilentlyContinue }; $downloadOk=$false; for($i=1; $i -le 2 -and -not $downloadOk; $i++){ try { Invoke-WebRequest $zipUrl -OutFile $zip -UseBasicParsing; $stageRoot=Join-Path $env:TEMP ('OptimizerRoblox_stage_' + [guid]::NewGuid().ToString('N')); New-Item -ItemType Directory -Path $stageRoot -Force | Out-Null; Expand-Archive -Path $zip -DestinationPath $stageRoot -Force; $downloadOk=$true } catch { if(Test-Path $zip){ Remove-Item $zip -Force -ErrorAction SilentlyContinue }; if($i -eq 2){ throw } } }; $stageDir=Join-Path $stageRoot 'OptimizerRoblox'; if(-not (Test-Path $stageDir)){ $child=Get-ChildItem -Path $stageRoot -Directory | Select-Object -First 1; if($child){$stageDir=$child.FullName} }; if(-not (Test-Path (Join-Path $stageDir 'OptimizerRoblox.exe') -PathType Leaf)){ throw 'Optimizer package missing OptimizerRoblox.exe after extract' }; $target='!OPTIMIZER_DIR!'; $final=$target; $killCmd={ taskkill /f /im OptimizerRoblox.exe *> $null; taskkill /f /im RobloxPlayerBeta.exe *> $null; Start-Sleep -Milliseconds 1200 }; try { if(Test-Path $target){ Remove-Item $target -Recurse -Force -ErrorAction Stop }; Move-Item -Path $stageDir -Destination $target -Force -ErrorAction Stop } catch { & $killCmd; try { if(Test-Path $target){ Remove-Item $target -Recurse -Force -ErrorAction Stop }; Move-Item -Path $stageDir -Destination $target -Force -ErrorAction Stop } catch { $verTarget=Join-Path '!DOWNLOADS!' ('OptimizerRoblox_v' + '!REMOTE_VER!'); if(Test-Path $verTarget){ Remove-Item $verTarget -Recurse -Force -ErrorAction SilentlyContinue }; New-Item -ItemType Directory -Path $verTarget -Force | Out-Null; Copy-Item -Path (Join-Path $stageDir '*') -Destination $verTarget -Recurse -Force; $final=$verTarget } }; $verFile=Join-Path $final 'optimizer_ver.txt'; Set-Content -Path $verFile -Value '!REMOTE_VER!' -Encoding Ascii; Write-Output ('OK::' + $final) } catch { Write-Output ('ERR::' + $_.Exception.Message) }"`) do set "OPTIMIZER_DL_RESULT=%%p"
+    if /I "!OPTIMIZER_DL_RESULT:~0,4!"=="OK::" (
+        set "ACTIVE_OPTIMIZER_DIR=!OPTIMIZER_DL_RESULT:~4!"
+        set "ACTIVE_OPTIMIZER_EXE=!ACTIVE_OPTIMIZER_DIR!\OptimizerRoblox.exe"
+        set "ACTIVE_OPTIMIZER_VER_FILE=!ACTIVE_OPTIMIZER_DIR!\optimizer_ver.txt"
+        if exist "!ACTIVE_OPTIMIZER_EXE!" (
+            echo [+] OptimizerRoblox onedir v!REMOTE_VER! saved to !ACTIVE_OPTIMIZER_DIR!
+        ) else (
+            echo [-] OptimizerRoblox onedir FAILED ^(missing exe after install^)
+        )
     ) else (
-        echo [-] OptimizerRoblox onedir FAILED
+        if /I "!OPTIMIZER_DL_RESULT:~0,5!"=="ERR::" (
+            echo [-] OptimizerRoblox onedir FAILED: !OPTIMIZER_DL_RESULT:~5!
+        ) else (
+            echo [-] OptimizerRoblox onedir FAILED: Unknown download/extract error
+        )
     )
 )
 
