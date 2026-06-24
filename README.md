@@ -21,6 +21,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https
 11. Tải hoặc update `MachineMonitor.exe` ra Desktop.
 12. Tạo `MachineMonitor.lnk` trong Startup để monitor tự chạy cùng máy.
 13. Cài FarmSync trong cửa sổ riêng và tự mở FarmSync_AutoStart khi cài xong.
+14. Gửi webhook xác nhận setup hoàn tất:
+	- Tự đọc title FarmSync để lấy `Device XX`.
+	- Nếu chưa thấy title Device thì tự chạy `FarmSync_AutoStart*.bat` và đợi detect.
+	- Gọi API devices để map ra `device_note`.
+	- Gửi Discord webhook kèm tên máy, device, note và title.
 
 ## MachineMonitor (bot theo dõi riêng)
 
@@ -32,6 +37,7 @@ Hành vi hiện tại:
 2. Alert có ảnh chụp màn hình máy.
 3. Đọc title FarmSync để lấy Device (ví dụ `Device 22`).
 4. Gọi API FarmSync để map sang note máy và gửi kèm vào alert.
+5. Setup script cũng có webhook cuối để báo máy đã cài xong (khác với alert sự cố của monitor).
 
 ## Cấu hình MachineMonitor
 
