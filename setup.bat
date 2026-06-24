@@ -10,6 +10,7 @@ if %errorLevel% neq 0 (
 )
 
 set "DESKTOP=%USERPROFILE%\Desktop"
+set "DOWNLOADS=%USERPROFILE%\Downloads"
 set "REPO_RAW=https://raw.githubusercontent.com/TuanDarcy/file-install/main"
 set "FARMSYNC_KEY="
 
@@ -96,10 +97,11 @@ echo [*] Checking tools status...
 set "UPDATE_OPTIMIZER=1"
 set "LOCAL_VER=0"
 set "REMOTE_VER=0"
-set "OPTIMIZER_DIR=!DESKTOP!\OptimizerRoblox"
+set "OPTIMIZER_DIR=!DOWNLOADS!\OptimizerRoblox"
 set "OPTIMIZER_EXE=!OPTIMIZER_DIR!\OptimizerRoblox.exe"
 set "OPTIMIZER_VER_FILE=!OPTIMIZER_DIR!\optimizer_ver.txt"
-set "OPTIMIZER_ZIP=%TEMP%\OptimizerRoblox_onedir.zip"
+set "OPTIMIZER_ZIP=!DOWNLOADS!\OptimizerRoblox_onedir.zip"
+set "OPTIMIZER_DESKTOP_SHORTCUT=!DESKTOP!\OptimizerRoblox.lnk"
 
 :: Get remote version
 for /f "tokens=*" %%v in ('powershell -NoProfile -Command "try{(Invoke-WebRequest '%REPO_RAW%/version.txt' -UseBasicParsing -TimeoutSec 5).Content.Trim()}catch{'0'}" 2^>nul') do set "REMOTE_VER=%%v"
@@ -130,13 +132,11 @@ if exist "!OPTIMIZER_EXE!" (
 
 if "!UPDATE_OPTIMIZER!"=="1" (
     echo [4/8] Downloading OptimizerRoblox onedir package...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/OptimizerRoblox_onedir.zip' -OutFile '!OPTIMIZER_ZIP!' -UseBasicParsing; if(Test-Path '!OPTIMIZER_DIR!'){ Remove-Item '!OPTIMIZER_DIR!' -Recurse -Force -ErrorAction SilentlyContinue }; Expand-Archive -Path '!OPTIMIZER_ZIP!' -DestinationPath '!DESKTOP!' -Force"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/OptimizerRoblox_onedir.zip' -OutFile '!OPTIMIZER_ZIP!' -UseBasicParsing; if(Test-Path '!OPTIMIZER_DIR!'){ Remove-Item '!OPTIMIZER_DIR!' -Recurse -Force -ErrorAction SilentlyContinue }; Expand-Archive -Path '!OPTIMIZER_ZIP!' -DestinationPath '!DOWNLOADS!' -Force"
     if exist "!OPTIMIZER_EXE!" (
         if not exist "!OPTIMIZER_DIR!" mkdir "!OPTIMIZER_DIR!"
         echo !REMOTE_VER!>"!OPTIMIZER_VER_FILE!"
-        echo [+] OptimizerRoblox onedir v!REMOTE_VER! saved to Desktop
-        del /f "!DESKTOP!\OptimizerRoblox.exe" >nul 2>&1
-        del /f "!OPTIMIZER_ZIP!" >nul 2>&1
+        echo [+] OptimizerRoblox onedir v!REMOTE_VER! saved to Downloads
     ) else (
         echo [-] OptimizerRoblox onedir FAILED
     )
@@ -160,6 +160,12 @@ if exist "!OPTIMIZER_EXE!" (
     timeout /t 2 /nobreak >nul
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process '!OPTIMIZER_EXE!' -Verb RunAs"
     echo [+] OptimizerRoblox launched as Admin
+)
+
+:: Create Desktop shortcut for OptimizerRoblox
+if exist "!OPTIMIZER_EXE!" (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws=New-Object -ComObject WScript.Shell; $s=$ws.CreateShortcut('!OPTIMIZER_DESKTOP_SHORTCUT!'); $s.TargetPath='!OPTIMIZER_EXE!'; $s.WorkingDirectory='!OPTIMIZER_DIR!'; $s.Description='Roblox Optimizer'; $s.Save()"
+    echo [+] OptimizerRoblox desktop shortcut created
 )
 
 :: Add OptimizerRoblox to Startup (auto-start on boot)
@@ -335,7 +341,7 @@ if exist "!DESKTOP!\FarmSync" (
 echo.
 echo [*] Sending setup completion webhook...
 set "FS_AUTOSTART_NOTIFY="
-for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path \"!DESKTOP!\" -Filter \"FarmSync_AutoStart*.bat\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART_NOTIFY=%%f"
+for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path \"!DESKTOP!\" -Filter \"FarmSync_AutoStart*\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART_NOTIFY=%%f"
 
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 "$tmp=Join-Path $env:TEMP ('kaitun_notify_' + [guid]::NewGuid().ToString() + '.ps1'); @'
@@ -448,5 +454,5 @@ echo  ==========================================
 echo   Setup complete!
 echo  ==========================================
 echo.
-set /p "__EXIT_PROMPT=Press Enter to exit..."
+powershell -NoProfile -Command "Read-Host 'Press Enter to exit' | Out-Null"
 exit /b 0
