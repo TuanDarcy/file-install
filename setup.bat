@@ -123,6 +123,31 @@ if exist "!OPTIMIZER_DESKTOP_SHORTCUT!" (
 :: Get remote version
 for /f "tokens=*" %%v in ('powershell -NoProfile -Command "try{(Invoke-WebRequest '%REPO_RAW%/version.txt' -UseBasicParsing -TimeoutSec 5).Content.Trim()}catch{'0'}" 2^>nul') do set "REMOTE_VER=%%v"
 
+:: Fast-path: if Downloads\OptimizerRoblox already has correct version and required files, skip downloading.
+if exist "!OPTIMIZER_DIR!\OptimizerRoblox.exe" (
+    set "LOCAL_VER="
+    if exist "!OPTIMIZER_VER_FILE!" (
+        set /p LOCAL_VER=<"!OPTIMIZER_VER_FILE!"
+        set "LOCAL_VER=!LOCAL_VER: =!"
+    ) else (
+        for /f "tokens=*" %%v in ('powershell -NoProfile -Command "(Get-Item '!OPTIMIZER_DIR!\OptimizerRoblox.exe').VersionInfo.FileVersion" 2^>nul') do set "LOCAL_VER=%%v"
+    )
+
+    if "!LOCAL_VER!"=="!REMOTE_VER!" (
+        set "OPTIMIZER_REQUIRED_RESULT="
+        for /f "usebackq delims=" %%r in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$d='!OPTIMIZER_DIR!'; $req=@('OptimizerRoblox.exe','_internal\libcrypto-3.dll','_internal\libssl-3.dll','_internal\libffi-8.dll','_internal\psutil\_psutil_windows.pyd'); $missing=@(); foreach($f in $req){ if(-not (Test-Path (Join-Path $d $f) -PathType Leaf)){ $missing += $f } }; if($missing.Count -eq 0){ 'OK' } else { 'MISSING: ' + ($missing -join ', ') }" 2^>nul`) do set "OPTIMIZER_REQUIRED_RESULT=%%r"
+        if /I "!OPTIMIZER_REQUIRED_RESULT!"=="OK" (
+            set "ACTIVE_OPTIMIZER_DIR=!OPTIMIZER_DIR!"
+            set "ACTIVE_OPTIMIZER_EXE=!OPTIMIZER_DIR!\OptimizerRoblox.exe"
+            set "ACTIVE_OPTIMIZER_VER_FILE=!OPTIMIZER_VER_FILE!"
+            set "UPDATE_OPTIMIZER=0"
+            echo [+] OptimizerRoblox folder in Downloads is complete and up to date ^(v!REMOTE_VER!^) - skip download
+        ) else (
+            if not "!OPTIMIZER_REQUIRED_RESULT!"=="" echo [!] Existing OptimizerRoblox folder is incomplete: !OPTIMIZER_REQUIRED_RESULT!
+        )
+    )
+)
+
 if not exist "!ACTIVE_OPTIMIZER_EXE!" (
     for /f "usebackq delims=" %%v in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$downloads='!DOWNLOADS!'; $rv='!REMOTE_VER!'; $cand=Get-ChildItem -Path $downloads -Directory -Filter 'OptimizerRoblox*' -ErrorAction SilentlyContinue ^| Sort-Object LastWriteTime -Descending; foreach($d in $cand){ $exe=Join-Path $d.FullName 'OptimizerRoblox.exe'; $vf=Join-Path $d.FullName 'optimizer_ver.txt'; if(Test-Path $exe -PathType Leaf){ if(Test-Path $vf -PathType Leaf){ $lv=(Get-Content -Path $vf -ErrorAction SilentlyContinue ^| Select-Object -First 1).Trim(); if($lv -eq $rv){ Write-Output $exe; break } } } }" 2^>nul`) do set "ACTIVE_OPTIMIZER_EXE=%%v"
     if exist "!ACTIVE_OPTIMIZER_EXE!" (
