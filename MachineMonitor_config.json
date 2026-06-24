@@ -8,5 +8,11 @@
   "sudden_drop_percent": 0.35,
   "send_screenshot_on_alert": true,
   "start_silent": true,
-  "connect_timeout_sec": 8
+  "connect_timeout_sec": 8,
+  "farmsync_api_key": "",
+  "farmsync_devices_url": "",
+  "farmsync_api_key_header": "x-api-key",
+  "farmsync_device_id_field": "device",
+  "farmsync_note_field": "note",
+  "farmsync_cache_ttl_sec": 600
 }
