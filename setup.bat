@@ -108,17 +108,37 @@ set "LEGACY_OPTIMIZER_EXE=!DESKTOP!\OptimizerRoblox.exe"
 set "ACTIVE_OPTIMIZER_DIR=!OPTIMIZER_DIR!"
 set "ACTIVE_OPTIMIZER_EXE=!OPTIMIZER_EXE!"
 set "ACTIVE_OPTIMIZER_VER_FILE=!OPTIMIZER_VER_FILE!"
+set "OPTIMIZER_SHORTCUT_TARGET="
+
+if exist "!OPTIMIZER_DESKTOP_SHORTCUT!" (
+    for /f "usebackq delims=" %%v in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('!OPTIMIZER_DESKTOP_SHORTCUT!'); if($s.TargetPath){$s.TargetPath}" 2^>nul`) do set "OPTIMIZER_SHORTCUT_TARGET=%%v"
+    if exist "!OPTIMIZER_SHORTCUT_TARGET!" (
+        for %%d in ("!OPTIMIZER_SHORTCUT_TARGET!") do set "ACTIVE_OPTIMIZER_DIR=%%~dpd"
+        set "ACTIVE_OPTIMIZER_DIR=!ACTIVE_OPTIMIZER_DIR:~0,-1!"
+        set "ACTIVE_OPTIMIZER_EXE=!OPTIMIZER_SHORTCUT_TARGET!"
+        set "ACTIVE_OPTIMIZER_VER_FILE=!ACTIVE_OPTIMIZER_DIR!\optimizer_ver.txt"
+    )
+)
 
 :: Get remote version
 for /f "tokens=*" %%v in ('powershell -NoProfile -Command "try{(Invoke-WebRequest '%REPO_RAW%/version.txt' -UseBasicParsing -TimeoutSec 5).Content.Trim()}catch{'0'}" 2^>nul') do set "REMOTE_VER=%%v"
 
-if exist "!OPTIMIZER_EXE!" (
+if not exist "!ACTIVE_OPTIMIZER_EXE!" (
+    for /f "usebackq delims=" %%v in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$downloads='!DOWNLOADS!'; $rv='!REMOTE_VER!'; $cand=Get-ChildItem -Path $downloads -Directory -Filter 'OptimizerRoblox*' -ErrorAction SilentlyContinue ^| Sort-Object LastWriteTime -Descending; foreach($d in $cand){ $exe=Join-Path $d.FullName 'OptimizerRoblox.exe'; $vf=Join-Path $d.FullName 'optimizer_ver.txt'; if(Test-Path $exe -PathType Leaf){ if(Test-Path $vf -PathType Leaf){ $lv=(Get-Content -Path $vf -ErrorAction SilentlyContinue ^| Select-Object -First 1).Trim(); if($lv -eq $rv){ Write-Output $exe; break } } } }" 2^>nul`) do set "ACTIVE_OPTIMIZER_EXE=%%v"
+    if exist "!ACTIVE_OPTIMIZER_EXE!" (
+        for %%d in ("!ACTIVE_OPTIMIZER_EXE!") do set "ACTIVE_OPTIMIZER_DIR=%%~dpd"
+        set "ACTIVE_OPTIMIZER_DIR=!ACTIVE_OPTIMIZER_DIR:~0,-1!"
+        set "ACTIVE_OPTIMIZER_VER_FILE=!ACTIVE_OPTIMIZER_DIR!\optimizer_ver.txt"
+    )
+)
+
+if exist "!ACTIVE_OPTIMIZER_EXE!" (
     :: Check sidecar version file
-    if exist "!OPTIMIZER_VER_FILE!" (
-        set /p LOCAL_VER=<"!OPTIMIZER_VER_FILE!"
+    if exist "!ACTIVE_OPTIMIZER_VER_FILE!" (
+        set /p LOCAL_VER=<"!ACTIVE_OPTIMIZER_VER_FILE!"
         set "LOCAL_VER=!LOCAL_VER: =!"
     ) else (
-        for /f "tokens=*" %%v in ('powershell -NoProfile -Command "(Get-Item '!OPTIMIZER_EXE!').VersionInfo.FileVersion" 2^>nul') do set "LOCAL_VER=%%v"
+        for /f "tokens=*" %%v in ('powershell -NoProfile -Command "(Get-Item '!ACTIVE_OPTIMIZER_EXE!').VersionInfo.FileVersion" 2^>nul') do set "LOCAL_VER=%%v"
         if "!LOCAL_VER!"=="" set "LOCAL_VER=0"
     )
 
@@ -126,7 +146,7 @@ if exist "!OPTIMIZER_EXE!" (
         echo [+] OptimizerRoblox onedir up to date ^(v!LOCAL_VER!^)
         taskkill /f /im OptimizerRoblox.exe >nul 2>&1
         timeout /t 2 /nobreak >nul
-        powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process '!OPTIMIZER_EXE!' -Verb RunAs"
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process '!ACTIVE_OPTIMIZER_EXE!' -Verb RunAs"
         echo [+] OptimizerRoblox launched as Admin
         set "UPDATE_OPTIMIZER=0"
     ) else (
@@ -356,12 +376,15 @@ if exist "!DESKTOP!\FarmSync" (
 echo.
 echo [*] Sending setup completion webhook...
 set "FS_AUTOSTART_NOTIFY="
+set "NOTIFY_SCRIPT=%~dp0setup_notify.ps1"
 for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path \"!DESKTOP!\" -Filter \"FarmSync_AutoStart*\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART_NOTIFY=%%f"
-if not exist "%~dp0setup_notify.ps1" (
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest '%REPO_RAW%/setup_notify.ps1' -OutFile '%~dp0setup_notify.ps1' -UseBasicParsing -TimeoutSec 10 } catch {}"
+if exist "!DESKTOP!\setup_notify.ps1" set "NOTIFY_SCRIPT=!DESKTOP!\setup_notify.ps1"
+if not exist "!NOTIFY_SCRIPT!" (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest '%REPO_RAW%/setup_notify.ps1' -OutFile '!DESKTOP!\setup_notify.ps1' -UseBasicParsing -TimeoutSec 10 } catch {}"
+    if exist "!DESKTOP!\setup_notify.ps1" set "NOTIFY_SCRIPT=!DESKTOP!\setup_notify.ps1"
 )
-if exist "%~dp0setup_notify.ps1" (
-    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup_notify.ps1" -DesktopPath "!DESKTOP!" -AutoStartPath "!FS_AUTOSTART_NOTIFY!"
+if exist "!NOTIFY_SCRIPT!" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "!NOTIFY_SCRIPT!" -DesktopPath "!DESKTOP!" -AutoStartPath "!FS_AUTOSTART_NOTIFY!"
 ) else (
     echo [-] setup_notify.ps1 not found - skipping webhook
 )
