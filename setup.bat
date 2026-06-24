@@ -96,56 +96,79 @@ echo [*] Checking tools status...
 set "UPDATE_OPTIMIZER=1"
 set "LOCAL_VER=0"
 set "REMOTE_VER=0"
+set "OPTIMIZER_DIR=!DESKTOP!\OptimizerRoblox"
+set "OPTIMIZER_EXE=!OPTIMIZER_DIR!\OptimizerRoblox.exe"
+set "OPTIMIZER_VER_FILE=!OPTIMIZER_DIR!\optimizer_ver.txt"
+set "OPTIMIZER_ZIP=%TEMP%\OptimizerRoblox_onedir.zip"
 
 :: Get remote version
 for /f "tokens=*" %%v in ('powershell -NoProfile -Command "try{(Invoke-WebRequest '%REPO_RAW%/version.txt' -UseBasicParsing -TimeoutSec 5).Content.Trim()}catch{'0'}" 2^>nul') do set "REMOTE_VER=%%v"
 
-if exist "!DESKTOP!\OptimizerRoblox.exe" (
+if exist "!OPTIMIZER_EXE!" (
     :: Check sidecar version file
-    if exist "!DESKTOP!\optimizer_ver.txt" (
-        set /p LOCAL_VER=<"!DESKTOP!\optimizer_ver.txt"
+    if exist "!OPTIMIZER_VER_FILE!" (
+        set /p LOCAL_VER=<"!OPTIMIZER_VER_FILE!"
         set "LOCAL_VER=!LOCAL_VER: =!"
     ) else (
-        for /f "tokens=*" %%v in ('powershell -NoProfile -Command "(Get-Item '!DESKTOP!\OptimizerRoblox.exe').VersionInfo.FileVersion" 2^>nul') do set "LOCAL_VER=%%v"
+        for /f "tokens=*" %%v in ('powershell -NoProfile -Command "(Get-Item '!OPTIMIZER_EXE!').VersionInfo.FileVersion" 2^>nul') do set "LOCAL_VER=%%v"
         if "!LOCAL_VER!"=="" set "LOCAL_VER=0"
     )
 
     if "!REMOTE_VER!"=="!LOCAL_VER!" (
-        echo [+] OptimizerRoblox.exe up to date ^(v!LOCAL_VER!^)
+        echo [+] OptimizerRoblox onedir up to date ^(v!LOCAL_VER!^)
         taskkill /f /im OptimizerRoblox.exe >nul 2>&1
         timeout /t 2 /nobreak >nul
-        powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process '!DESKTOP!\OptimizerRoblox.exe' -Verb RunAs"
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process '!OPTIMIZER_EXE!' -Verb RunAs"
         echo [+] OptimizerRoblox launched as Admin
         set "UPDATE_OPTIMIZER=0"
     ) else (
         echo [*] Updating OptimizerRoblox ^(v!LOCAL_VER! -^> v!REMOTE_VER!^)...
-        del /f "!DESKTOP!\OptimizerRoblox.exe" >nul 2>&1
+        taskkill /f /im OptimizerRoblox.exe >nul 2>&1
+        if exist "!OPTIMIZER_DIR!" rmdir /s /q "!OPTIMIZER_DIR!"
     )
 )
 
 if "!UPDATE_OPTIMIZER!"=="1" (
-    echo [4/8] Downloading OptimizerRoblox.exe to Desktop...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/OptimizerRoblox.exe' -OutFile '!DESKTOP!\OptimizerRoblox.exe' -UseBasicParsing"
-    if exist "!DESKTOP!\OptimizerRoblox.exe" (
-        echo !REMOTE_VER!>"!DESKTOP!\optimizer_ver.txt"
-        echo [+] OptimizerRoblox.exe v!REMOTE_VER! saved to Desktop
-        :: Kill cũ nếu đang chạy rồi mở bản mới
-        taskkill /f /im OptimizerRoblox.exe >nul 2>&1
-        timeout /t 2 /nobreak >nul
-        powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process '!DESKTOP!\OptimizerRoblox.exe' -Verb RunAs"
-        echo [+] OptimizerRoblox launched as Admin
+    echo [4/8] Downloading OptimizerRoblox onedir package...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/OptimizerRoblox_onedir.zip' -OutFile '!OPTIMIZER_ZIP!' -UseBasicParsing; if(Test-Path '!OPTIMIZER_DIR!'){ Remove-Item '!OPTIMIZER_DIR!' -Recurse -Force -ErrorAction SilentlyContinue }; Expand-Archive -Path '!OPTIMIZER_ZIP!' -DestinationPath '!DESKTOP!' -Force"
+    if exist "!OPTIMIZER_EXE!" (
+        if not exist "!OPTIMIZER_DIR!" mkdir "!OPTIMIZER_DIR!"
+        echo !REMOTE_VER!>"!OPTIMIZER_VER_FILE!"
+        echo [+] OptimizerRoblox onedir v!REMOTE_VER! saved to Desktop
+        del /f "!DESKTOP!\OptimizerRoblox.exe" >nul 2>&1
+        del /f "!OPTIMIZER_ZIP!" >nul 2>&1
     ) else (
-        echo [-] OptimizerRoblox.exe FAILED
+        echo [-] OptimizerRoblox onedir FAILED
     )
+)
+
+:: Ensure OptimizerRoblox always runs as admin via compatibility flag
+if exist "!OPTIMIZER_EXE!" (
+    set "OPT_RUNAS_SET=0"
+    for /f "tokens=*" %%v in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$k='HKCU:\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers'; try{(Get-ItemProperty -Path $k -Name '!OPTIMIZER_EXE!' -ErrorAction Stop).'!OPTIMIZER_EXE!'}catch{''}" 2^>nul') do set "OPT_RUNAS_VAL=%%v"
+    echo !OPT_RUNAS_VAL! | find /I "RUNASADMIN" >nul
+    if errorlevel 1 (
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "$k='HKCU:\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers'; if(-not (Test-Path $k)){ New-Item -Path $k -Force | Out-Null }; Set-ItemProperty -Path $k -Name '!OPTIMIZER_EXE!' -Value '~ RUNASADMIN' -Force"
+        echo [+] OptimizerRoblox Run as administrator set
+    ) else (
+        echo [+] OptimizerRoblox already set to Run as administrator
+    )
+)
+
+if exist "!OPTIMIZER_EXE!" (
+    taskkill /f /im OptimizerRoblox.exe >nul 2>&1
+    timeout /t 2 /nobreak >nul
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process '!OPTIMIZER_EXE!' -Verb RunAs"
+    echo [+] OptimizerRoblox launched as Admin
 )
 
 :: Add OptimizerRoblox to Startup (auto-start on boot)
 set "STARTUP=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
-if exist "!DESKTOP!\OptimizerRoblox.exe" (
+if exist "!OPTIMIZER_EXE!" (
     if exist "!STARTUP!\OptimizerRoblox.lnk" (
         echo [+] OptimizerRoblox already in Startup
     ) else (
-        powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws=New-Object -ComObject WScript.Shell; $s=$ws.CreateShortcut('!STARTUP!\OptimizerRoblox.lnk'); $s.TargetPath='!DESKTOP!\OptimizerRoblox.exe'; $s.WorkingDirectory='!DESKTOP!'; $s.Description='Roblox Optimizer'; $s.Save()"
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws=New-Object -ComObject WScript.Shell; $s=$ws.CreateShortcut('!STARTUP!\OptimizerRoblox.lnk'); $s.TargetPath='!OPTIMIZER_EXE!'; $s.WorkingDirectory='!OPTIMIZER_DIR!'; $s.Description='Roblox Optimizer'; $s.Save()"
         echo [+] OptimizerRoblox added to Startup
     )
 )
