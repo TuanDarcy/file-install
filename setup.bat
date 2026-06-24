@@ -167,6 +167,7 @@ echo.
 echo [*] Checking 24122024 folder status...
 set "TOOLS_24122024_DIR=!DESKTOP!\24122024"
 set "TOOLS_24122024_OK=1"
+if not exist "!TOOLS_24122024_DIR!\dControl.exe" set "TOOLS_24122024_OK=0"
 if not exist "!TOOLS_24122024_DIR!\dControl.ini" set "TOOLS_24122024_OK=0"
 if not exist "!TOOLS_24122024_DIR!\Defender_Settings.vbs" set "TOOLS_24122024_OK=0"
 if not exist "!TOOLS_24122024_DIR!\ReadMe.txt" set "TOOLS_24122024_OK=0"
@@ -176,8 +177,9 @@ if "!TOOLS_24122024_OK!"=="1" (
 ) else (
     echo [5/6] Downloading 24122024 folder to Desktop...
     if not exist "!TOOLS_24122024_DIR!" mkdir "!TOOLS_24122024_DIR!"
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "$dest='!TOOLS_24122024_DIR!'; Invoke-WebRequest '%REPO_RAW%/24122024/dControl.ini' -OutFile (Join-Path $dest 'dControl.ini') -UseBasicParsing; Invoke-WebRequest '%REPO_RAW%/24122024/Defender_Settings.vbs' -OutFile (Join-Path $dest 'Defender_Settings.vbs') -UseBasicParsing; Invoke-WebRequest '%REPO_RAW%/24122024/ReadMe.txt' -OutFile (Join-Path $dest 'ReadMe.txt') -UseBasicParsing"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$dest='!TOOLS_24122024_DIR!'; Invoke-WebRequest '%REPO_RAW%/24122024/dControl.exe' -OutFile (Join-Path $dest 'dControl.exe') -UseBasicParsing; Invoke-WebRequest '%REPO_RAW%/24122024/dControl.ini' -OutFile (Join-Path $dest 'dControl.ini') -UseBasicParsing; Invoke-WebRequest '%REPO_RAW%/24122024/Defender_Settings.vbs' -OutFile (Join-Path $dest 'Defender_Settings.vbs') -UseBasicParsing; Invoke-WebRequest '%REPO_RAW%/24122024/ReadMe.txt' -OutFile (Join-Path $dest 'ReadMe.txt') -UseBasicParsing"
     set "TOOLS_24122024_OK=1"
+    if not exist "!TOOLS_24122024_DIR!\dControl.exe" set "TOOLS_24122024_OK=0"
     if not exist "!TOOLS_24122024_DIR!\dControl.ini" set "TOOLS_24122024_OK=0"
     if not exist "!TOOLS_24122024_DIR!\Defender_Settings.vbs" set "TOOLS_24122024_OK=0"
     if not exist "!TOOLS_24122024_DIR!\ReadMe.txt" set "TOOLS_24122024_OK=0"
