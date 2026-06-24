@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableDelayedExpansion
 title KAITUN SETUP - Intelligent Updater
-set "SCRIPT_BUILD=2026-06-25-b84488b"
+set "SCRIPT_BUILD=2026-06-25-f3516aa"
 
 :: ===== Self-elevate to admin if needed =====
 net session >nul 2>&1
@@ -96,6 +96,7 @@ if exist "!STARTUP!\AutoRunBoots.lnk" (
 echo.
 echo [*] Checking tools status...
 echo [*] Setup build marker: !SCRIPT_BUILD!
+echo [*] Optimizer update mode: EXE-FIRST ^(zip only as fallback^)
 
 :: Check OptimizerRoblox version
 set "UPDATE_OPTIMIZER=1"
