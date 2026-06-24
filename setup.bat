@@ -74,6 +74,20 @@ if exist "C:\Tool_Boots\SetUpAll_PlzRunAsAminThisFile.bat" (
     echo [+] CuongBoots launched
 )
 
+:: Add AutoRunBoots to Startup
+set "STARTUP=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
+if exist "!STARTUP!\AutoRunBoots.lnk" (
+    echo [+] AutoRunBoots already in Startup
+) else (
+    for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path \"C:\Tool_Boots\" -Filter \"AutoRunBoots*\" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "AUTORUNBOOTS_PATH=%%f"
+    if not "!AUTORUNBOOTS_PATH!"=="" (
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws=New-Object -ComObject WScript.Shell; $s=$ws.CreateShortcut('!STARTUP!\AutoRunBoots.lnk'); $s.TargetPath='!AUTORUNBOOTS_PATH!'; $s.WorkingDirectory='C:\Tool_Boots'; $s.Description='AutoRunBoots'; $s.Save()"
+        echo [+] AutoRunBoots added to Startup
+    ) else (
+        echo [*] AutoRunBoots not found in C:\Tool_Boots yet - skipping
+    )
+)
+
 :: ===== [4] Check and Download Tools (volt.exe + OptimizerRoblox.exe) =====
 echo.
 echo [*] Checking tools status...
