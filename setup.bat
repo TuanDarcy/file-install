@@ -35,7 +35,7 @@ for /f "tokens=*" %%a in ('powershell -NoProfile -Command "Get-ItemProperty -Pat
 if "!NTP_CHECK!"=="time.cloudflare.com,0x1" (
     echo [+] Time already synced with Cloudflare
 ) else (
-    echo [1/7] Syncing time with time.cloudflare.com...
+    echo [1/8] Syncing time with time.cloudflare.com...
     w32tm /config /manualpeerlist:"time.cloudflare.com" /syncfromflags:manual /reliable:YES /update >nul 2>&1
     net stop w32tm >nul 2>&1
     net start w32tm >nul 2>&1
@@ -58,7 +58,7 @@ set "VRAM_OK=1"
 if "!VRAM_OK!"=="1" (
     echo [+] Virtual RAM already set to 350GB
 ) else (
-    echo [2/7] Setting Virtual Memory to 350GB...
+    echo [2/8] Setting Virtual Memory to 350GB...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'AutomaticManagedPagefile' -Value 0 -Type DWord -Force; New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'PagingFiles' -Value @('C:\pagefile.sys 350000 350000') -PropertyType MultiString -Force | Out-Null"
     echo [+] Virtual RAM set to 350GB (restart required to apply)
 )
@@ -69,7 +69,7 @@ echo [*] Checking CuongBoots status...
 if exist "C:\Tool_Boots\SetUpAll_PlzRunAsAminThisFile.bat" (
     echo [+] CuongBoots already installed
 ) else (
-    echo [3/7] Installing CuongBoots...
+    echo [3/8] Installing CuongBoots...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-MpPreference -DisableRealtimeMonitoring $true; Add-MpPreference -ExclusionPath 'C:\Tool_Boots'; Invoke-WebRequest -Uri 'https://apa.cdev.my/download/CuongBoots_V1.2.zip' -OutFile \"$env:TEMP\CuongBoots.zip\" -UseBasicParsing; Expand-Archive -Path \"$env:TEMP\CuongBoots.zip\" -DestinationPath 'C:\Tool_Boots' -Force; Start-Process -FilePath 'C:\Tool_Boots\SetUpAll_PlzRunAsAminThisFile.bat' -Verb RunAs; Start-Process 'C:\Tool_Boots'"
     echo [+] CuongBoots launched
 )
@@ -124,7 +124,7 @@ if exist "!DESKTOP!\OptimizerRoblox.exe" (
 )
 
 if "!UPDATE_OPTIMIZER!"=="1" (
-    echo [4/7] Downloading OptimizerRoblox.exe to Desktop...
+    echo [4/8] Downloading OptimizerRoblox.exe to Desktop...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/OptimizerRoblox.exe' -OutFile '!DESKTOP!\OptimizerRoblox.exe' -UseBasicParsing"
     if exist "!DESKTOP!\OptimizerRoblox.exe" (
         echo !REMOTE_VER!>"!DESKTOP!\optimizer_ver.txt"
@@ -157,7 +157,7 @@ if exist "!DESKTOP!\volt.exe" (
     copy /Y "!USERPROFILE!\Downloads\volt.exe" "!DESKTOP!\volt.exe" >nul
     echo [+] volt.exe copied from Downloads to Desktop
 ) else (
-    echo [4/7] Downloading volt.exe to Desktop...
+    echo [4/8] Downloading volt.exe to Desktop...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/volt.exe' -OutFile '!DESKTOP!\volt.exe' -UseBasicParsing"
     if exist "!DESKTOP!\volt.exe" (echo [+] volt.exe saved to Desktop) else (echo [-] volt.exe FAILED)
 )
@@ -190,7 +190,7 @@ if exist "!MONITOR_EXE!" (
 )
 
 if "!UPDATE_MONITOR!"=="1" (
-    echo [5/7] Downloading MachineMonitor.exe to Desktop...
+    echo [5/8] Downloading MachineMonitor.exe to Desktop...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/MachineMonitor.exe' -OutFile '!MONITOR_EXE!' -UseBasicParsing"
     if exist "!MONITOR_EXE!" (
         echo !MONITOR_REMOTE_VER!>"!MONITOR_VERSION_FILE!"
@@ -241,7 +241,7 @@ if not exist "!TOOLS_24122024_DIR!\ReadMe.txt" set "TOOLS_24122024_OK=0"
 if "!TOOLS_24122024_OK!"=="1" (
     echo [+] 24122024 folder already on Desktop
 ) else (
-    echo [6/7] Downloading 24122024 folder to Desktop...
+    echo [6/8] Downloading 24122024 folder to Desktop...
     if not exist "!TOOLS_24122024_DIR!" mkdir "!TOOLS_24122024_DIR!"
     powershell -NoProfile -ExecutionPolicy Bypass -Command "$dest='!TOOLS_24122024_DIR!'; Invoke-WebRequest '%REPO_RAW%/24122024/dControl.exe' -OutFile (Join-Path $dest 'dControl.exe') -UseBasicParsing; Invoke-WebRequest '%REPO_RAW%/24122024/dControl.ini' -OutFile (Join-Path $dest 'dControl.ini') -UseBasicParsing; Invoke-WebRequest '%REPO_RAW%/24122024/Defender_Settings.vbs' -OutFile (Join-Path $dest 'Defender_Settings.vbs') -UseBasicParsing; Invoke-WebRequest '%REPO_RAW%/24122024/ReadMe.txt' -OutFile (Join-Path $dest 'ReadMe.txt') -UseBasicParsing"
     set "TOOLS_24122024_OK=1"
@@ -265,7 +265,7 @@ if exist "!DESKTOP!\FarmSync" (
     if "!FARMSYNC_KEY!"=="" (
         echo [!] No key - skipping FarmSync
     ) else (
-        echo [7/7] Installing FarmSync...
+        echo [7/8] Installing FarmSync...
         set FARMSYNC_URL=https://downloads.farmsync.cloud/client_web.exe
         set FARMSYNC_CLIENT=client_web
         :: Chạy FarmSync trong cửa sổ riêng - tránh nó thoát CMD main
@@ -307,6 +307,118 @@ if exist "!DESKTOP!\FarmSync" (
         )
     )
 )
+
+:: ===== [8] Notify setup complete to Discord via FarmSync Device/Note =====
+echo.
+echo [*] Sending setup completion webhook...
+set "FS_AUTOSTART_NOTIFY="
+for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path \"!DESKTOP!\" -Filter \"FarmSync_AutoStart*.bat\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART_NOTIFY=%%f"
+
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+"$tmp=Join-Path $env:TEMP ('kaitun_notify_' + [guid]::NewGuid().ToString() + '.ps1'); @'
+param([string]$DesktopPath,[string]$AutoStartPath)
+$configPath = Join-Path $DesktopPath 'MachineMonitor_config.json'
+if (-not (Test-Path $configPath)) { Write-Output '[*] Skip webhook: MachineMonitor_config.json not found'; exit 0 }
+
+$cfg = Get-Content -Path $configPath -Raw | ConvertFrom-Json
+$webhook = ([string]$cfg.webhook_url).Trim()
+if ([string]::IsNullOrWhiteSpace($webhook)) { Write-Output '[*] Skip webhook: webhook_url empty'; exit 0 }
+
+$apiKey = ([string]$cfg.farmsync_api_key).Trim()
+$devicesUrl = ([string]$cfg.farmsync_devices_url).Trim()
+if ([string]::IsNullOrWhiteSpace($devicesUrl)) { $devicesUrl = 'https://api.farmsync.cloud/api/devices/' }
+$apiHeader = ([string]$cfg.farmsync_api_key_header).Trim()
+if ([string]::IsNullOrWhiteSpace($apiHeader)) { $apiHeader = 'Authorization' }
+$idField = ([string]$cfg.farmsync_device_id_field).Trim()
+if ([string]::IsNullOrWhiteSpace($idField)) { $idField = 'device_name' }
+$noteField = ([string]$cfg.farmsync_note_field).Trim()
+if ([string]::IsNullOrWhiteSpace($noteField)) { $noteField = 'device_note' }
+
+function Get-DeviceInfo {
+    $rx = [regex]'(?i)device\s*(\d+)'
+    $p = Get-Process | Where-Object { $_.MainWindowTitle -and $_.MainWindowTitle.ToLower().Contains('farmsync') } | Select-Object -First 1
+    if (-not $p) { return $null }
+    $title = [string]$p.MainWindowTitle
+    $m = $rx.Match($title)
+    if (-not $m.Success) { return $null }
+    return [pscustomobject]@{ Device = [int]$m.Groups[1].Value; Title = $title }
+}
+
+$deviceInfo = $null
+$started = $false
+for ($i = 0; $i -lt 60; $i++) {
+    $deviceInfo = Get-DeviceInfo
+    if ($deviceInfo) { break }
+    if (-not $started -and -not [string]::IsNullOrWhiteSpace($AutoStartPath) -and (Test-Path $AutoStartPath)) {
+        try {
+            Start-Process -FilePath $AutoStartPath | Out-Null
+            Write-Output '[*] FarmSync_AutoStart launched for device detection'
+            $started = $true
+        } catch {}
+    }
+    Start-Sleep -Seconds 2
+}
+
+$device = 'Unknown'
+$title = 'N/A'
+if ($deviceInfo) {
+    $device = 'Device ' + $deviceInfo.Device
+    $title = $deviceInfo.Title
+}
+
+$note = 'N/A'
+if ($deviceInfo -and -not [string]::IsNullOrWhiteSpace($apiKey)) {
+    try {
+        $apiValue = $apiKey
+        if ($apiHeader -ieq 'Authorization' -and -not $apiKey.ToLower().StartsWith('bearer ')) { $apiValue = 'Bearer ' + $apiKey }
+        $headers = @{ 'Accept' = 'application/json' }
+        $headers[$apiHeader] = $apiValue
+        $payload = Invoke-RestMethod -Uri $devicesUrl -Headers $headers -Method Get -TimeoutSec 15
+        $items = @()
+        if ($payload -is [System.Collections.IEnumerable] -and -not ($payload -is [string])) { $items = @($payload) }
+        elseif ($payload.data) { $items = @($payload.data) }
+        elseif ($payload.devices) { $items = @($payload.devices) }
+
+        foreach ($item in $items) {
+            if ($null -eq $item) { continue }
+            $raw = $item.$idField
+            if ($null -eq $raw -and $item.device_name) { $raw = $item.device_name }
+            $num = $null
+            if ($raw -is [int]) { $num = [int]$raw }
+            elseif ($raw) {
+                $txt = [string]$raw
+                $m = [regex]::Match($txt, '(?i)device\s*(\d+)')
+                if ($m.Success) { $num = [int]$m.Groups[1].Value }
+                else {
+                    $m2 = [regex]::Match($txt, '(\d+)')
+                    if ($m2.Success) { $num = [int]$m2.Groups[1].Value }
+                }
+            }
+            if ($num -eq $deviceInfo.Device) {
+                $candidate = $item.$noteField
+                if ([string]::IsNullOrWhiteSpace([string]$candidate)) { $candidate = $item.device_note }
+                if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) { $note = [string]$candidate }
+                break
+            }
+        }
+    } catch {
+        Write-Output ('[*] FarmSync note lookup failed: ' + $_.Exception.Message)
+    }
+}
+
+$machine = $env:COMPUTERNAME
+if ([string]::IsNullOrWhiteSpace($machine)) { $machine = [System.Net.Dns]::GetHostName() }
+
+$desc = "Setup completed on $machine`nFarmSync Device: $device`nFarmSync Note: $note`nFarmSync Title: $title"
+$embed = @{ title = 'KAITUN Setup Completed'; description = $desc; color = 3066993; timestamp = [DateTime]::UtcNow.ToString('o') }
+$body = @{ username = 'KAITUN Setup'; embeds = @($embed) } | ConvertTo-Json -Depth 6
+try {
+    Invoke-RestMethod -Uri $webhook -Method Post -ContentType 'application/json' -Body $body -TimeoutSec 15 | Out-Null
+    Write-Output '[+] Setup completion webhook sent'
+} catch {
+    Write-Output ('[-] Setup webhook failed: ' + $_.Exception.Message)
+}
+'@ | Set-Content -Path $tmp -Encoding UTF8; & $tmp -DesktopPath '!DESKTOP!' -AutoStartPath '!FS_AUTOSTART_NOTIFY!'; Remove-Item $tmp -Force -ErrorAction SilentlyContinue"
 
 echo.
 echo  ==========================================
