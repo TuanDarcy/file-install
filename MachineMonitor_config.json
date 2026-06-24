@@ -2,14 +2,11 @@
   "enabled": true,
   "webhook_url": "",
   "sample_interval_sec": 15,
-  "heartbeat_interval_sec": 300,
   "alert_cooldown_sec": 300,
   "sudden_drop_min_previous_tabs": 20,
   "sudden_drop_absolute_drop": 10,
   "sudden_drop_percent": 0.35,
-  "high_cpu_percent": 95,
-  "high_cpu_consecutive_samples": 3,
-  "high_ram_percent": 95,
-  "high_ram_consecutive_samples": 3,
+  "send_screenshot_on_alert": true,
+  "start_silent": true,
   "connect_timeout_sec": 8
 }
