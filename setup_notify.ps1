@@ -30,12 +30,24 @@ function Get-DeviceInfo {
     return [pscustomobject]@{ Device = [int]$m.Groups[1].Value; Title = $title }
 }
 
+function Test-FarmSyncRunning {
+    try {
+        $p = Get-Process -ErrorAction SilentlyContinue | Where-Object {
+            $_.ProcessName -ieq 'client_web' -or
+            ($_.MainWindowTitle -and $_.MainWindowTitle.ToLower().Contains('farmsync'))
+        } | Select-Object -First 1
+        return ($null -ne $p)
+    } catch {
+        return $false
+    }
+}
+
 $deviceInfo = $null
 $started = $false
 for ($i = 0; $i -lt 60; $i++) {
     $deviceInfo = Get-DeviceInfo
     if ($deviceInfo) { break }
-    if (-not $started -and -not [string]::IsNullOrWhiteSpace($AutoStartPath) -and (Test-Path $AutoStartPath)) {
+    if (-not $started -and -not [string]::IsNullOrWhiteSpace($AutoStartPath) -and (Test-Path $AutoStartPath) -and -not (Test-FarmSyncRunning)) {
         try {
             Start-Process -FilePath $AutoStartPath | Out-Null
             Write-Output '[*] FarmSync_AutoStart launched for device detection'
