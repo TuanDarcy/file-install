@@ -13,7 +13,6 @@ if %errorLevel% neq 0 (
 set "DESKTOP=%USERPROFILE%\Desktop"
 set "DOWNLOADS=%USERPROFILE%\Downloads"
 set "REPO_RAW=https://raw.githubusercontent.com/TuanDarcy/file-install/main"
-set "CONFIG_SOURCE=%~dp0MachineMonitor_config.json"
 set "FARMSYNC_KEY="
 
 echo.
@@ -39,7 +38,7 @@ for /f "tokens=*" %%a in ('powershell -NoProfile -Command "Get-ItemProperty -Pat
 if "!NTP_CHECK!"=="time.cloudflare.com,0x1" (
     echo [+] Time already synced with Cloudflare
 ) else (
-    echo [1/8] Syncing time with time.cloudflare.com...
+    echo [1/6] Syncing time with time.cloudflare.com...
     w32tm /config /manualpeerlist:"time.cloudflare.com" /syncfromflags:manual /reliable:YES /update >nul 2>&1
     net stop w32tm >nul 2>&1
     net start w32tm >nul 2>&1
@@ -47,24 +46,24 @@ if "!NTP_CHECK!"=="time.cloudflare.com,0x1" (
     echo [+] Time synced with Cloudflare
 )
 
-:: ===== [2] Check and Set Virtual RAM to 350GB =====
+:: ===== [2] Check and Set Virtual RAM to 320GB =====
 echo.
 echo [*] Checking Virtual RAM status...
 set "VRAM_OK=0"
 for /f "tokens=*" %%a in ('powershell -NoProfile -Command "(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'PagingFiles' 2^>$null | Select-Object -ExpandProperty PagingFiles | Out-String).Trim()" 2^>nul') do set "PAGING_CHECK=%%a"
 for /f "tokens=*" %%a in ('powershell -NoProfile -Command "(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'AutomaticManagedPagefile' 2^>$null | Select-Object -ExpandProperty AutomaticManagedPagefile)" 2^>nul') do set "AUTO_MANAGED=%%a"
 
-if "!PAGING_CHECK:350000=!"=="!PAGING_CHECK!" goto :set_vram
+if "!PAGING_CHECK:320000=!"=="!PAGING_CHECK!" goto :set_vram
 if not "!AUTO_MANAGED!"=="0" goto :set_vram
 set "VRAM_OK=1"
 
 :set_vram
 if "!VRAM_OK!"=="1" (
-    echo [+] Virtual RAM already set to 350GB
+    echo [+] Virtual RAM already set to 320GB
 ) else (
-    echo [2/8] Setting Virtual Memory to 350GB...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'AutomaticManagedPagefile' -Value 0 -Type DWord -Force; New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'PagingFiles' -Value @('C:\pagefile.sys 350000 350000') -PropertyType MultiString -Force | Out-Null"
-    echo [+] Virtual RAM set to 350GB (restart required to apply)
+    echo [2/6] Setting Virtual Memory to 320GB...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'AutomaticManagedPagefile' -Value 0 -Type DWord -Force; New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name 'PagingFiles' -Value @('C:\pagefile.sys 320000 320000') -PropertyType MultiString -Force | Out-Null"
+    echo [+] Virtual RAM set to 320GB (restart required to apply)
 )
 
 :: ===== [3] Check and Install CuongBoots =====
@@ -73,7 +72,7 @@ echo [*] Checking CuongBoots status...
 if exist "C:\Tool_Boots\SetUpAll_PlzRunAsAminThisFile.bat" (
     echo [+] CuongBoots already installed
 ) else (
-    echo [3/8] Installing CuongBoots...
+    echo [3/6] Installing CuongBoots...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://apa.cdev.my/download/CuongBoots_V1.2.zip' -OutFile \"$env:TEMP\CuongBoots.zip\" -UseBasicParsing; Expand-Archive -Path \"$env:TEMP\CuongBoots.zip\" -DestinationPath 'C:\Tool_Boots' -Force; Start-Process -FilePath 'C:\Tool_Boots\SetUpAll_PlzRunAsAminThisFile.bat' -Verb RunAs; Start-Process 'C:\Tool_Boots'"
     echo [+] CuongBoots launched
 )
@@ -251,7 +250,7 @@ if "!UPDATE_OPTIMIZER!"=="1" (
             rmdir /s /q "!OPTIMIZER_DIR!" >nul 2>&1
         )
     )
-    echo [4/8] Downloading OptimizerRoblox onedir package ^(fallback mode^)...
+    echo [4/6] Downloading OptimizerRoblox onedir package ^(fallback mode^)...
     set "OPTIMIZER_DL_RESULT="
     for /f "usebackq delims=" %%p in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; try { $zip='!OPTIMIZER_ZIP!'; $zipUrl='!REPO_RAW!/OptimizerRoblox_onedir.zip'; if(Test-Path $zip){ Remove-Item $zip -Force -ErrorAction SilentlyContinue }; $downloadOk=$false; for($i=1; $i -le 2 -and -not $downloadOk; $i++){ try { Invoke-WebRequest $zipUrl -OutFile $zip -UseBasicParsing; $stageRoot=Join-Path $env:TEMP ('OptimizerRoblox_stage_' + [guid]::NewGuid().ToString('N')); New-Item -ItemType Directory -Path $stageRoot -Force | Out-Null; Expand-Archive -Path $zip -DestinationPath $stageRoot -Force; $downloadOk=$true } catch { if(Test-Path $zip){ Remove-Item $zip -Force -ErrorAction SilentlyContinue }; if($i -eq 2){ throw } } }; $stageDir=$null; $candidateNested=Join-Path $stageRoot 'OptimizerRoblox'; if(Test-Path (Join-Path $stageRoot 'OptimizerRoblox.exe') -PathType Leaf){ $stageDir=$stageRoot } elseif(Test-Path (Join-Path $candidateNested 'OptimizerRoblox.exe') -PathType Leaf){ $stageDir=$candidateNested } else { $exeHit=Get-ChildItem -Path $stageRoot -Filter 'OptimizerRoblox.exe' -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1; if($exeHit){ $stageDir=$exeHit.Directory.FullName } }; if(-not $stageDir){ throw 'Optimizer package missing OptimizerRoblox.exe after extract' }; $target='!OPTIMIZER_DIR!'; $final=$target; $killCmd={ taskkill /f /im OptimizerRoblox.exe *> $null; taskkill /f /im RobloxPlayerBeta.exe *> $null; Start-Sleep -Milliseconds 1200 }; $deploy={ param($src,$dst) if(Test-Path $dst){ Remove-Item $dst -Recurse -Force -ErrorAction Stop }; New-Item -ItemType Directory -Path $dst -Force | Out-Null; Copy-Item -Path (Join-Path $src '*') -Destination $dst -Recurse -Force -ErrorAction Stop }; try { & $deploy $stageDir $target } catch { & $killCmd; try { & $deploy $stageDir $target } catch { $verTarget=Join-Path '!DOWNLOADS!' ('OptimizerRoblox_v' + '!REMOTE_VER!'); if(Test-Path $verTarget){ Remove-Item $verTarget -Recurse -Force -ErrorAction SilentlyContinue }; New-Item -ItemType Directory -Path $verTarget -Force | Out-Null; Copy-Item -Path (Join-Path $stageDir '*') -Destination $verTarget -Recurse -Force; $final=$verTarget } }; $verFile=Join-Path $final 'optimizer_ver.txt'; Set-Content -Path $verFile -Value '!REMOTE_VER!' -Encoding Ascii; Write-Output ('OK::' + $final) } catch { Write-Output ('ERR::' + $_.Exception.Message) }"`) do set "OPTIMIZER_DL_RESULT=%%p"
     if /I "!OPTIMIZER_DL_RESULT:~0,4!"=="OK::" (
@@ -332,80 +331,11 @@ if exist "!DESKTOP!\volt.exe" (
     copy /Y "!USERPROFILE!\Downloads\volt.exe" "!DESKTOP!\volt.exe" >nul
     echo [+] volt.exe copied from Downloads to Desktop
 ) else (
-    echo [4/8] Downloading volt.exe to Desktop...
+    echo [4/6] Downloading volt.exe to Desktop...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/volt.exe' -OutFile '!DESKTOP!\volt.exe' -UseBasicParsing"
     if exist "!DESKTOP!\volt.exe" (echo [+] volt.exe saved to Desktop) else (echo [-] volt.exe FAILED)
 )
 
-:: ===== [5] Check and Download MachineMonitor =====
-echo.
-echo [*] Checking MachineMonitor status...
-set "MONITOR_EXE=!DESKTOP!\MachineMonitor.exe"
-set "MONITOR_CONFIG=!DESKTOP!\MachineMonitor_config.json"
-set "MONITOR_VERSION_FILE=!DESKTOP!\machine_monitor_ver.txt"
-set "MONITOR_REMOTE_VER=0"
-set "MONITOR_LOCAL_VER=0"
-set "UPDATE_MONITOR=1"
-
-for /f "tokens=*" %%v in ('powershell -NoProfile -Command "try{(Invoke-WebRequest '%REPO_RAW%/machine_monitor_version.txt' -UseBasicParsing -TimeoutSec 5).Content.Trim()}catch{'0'}" 2^>nul') do set "MONITOR_REMOTE_VER=%%v"
-
-if exist "!MONITOR_EXE!" (
-    if exist "!MONITOR_VERSION_FILE!" (
-        set /p MONITOR_LOCAL_VER=<"!MONITOR_VERSION_FILE!"
-        set "MONITOR_LOCAL_VER=!MONITOR_LOCAL_VER: =!"
-    )
-    if "!MONITOR_REMOTE_VER!"=="!MONITOR_LOCAL_VER!" (
-        echo [+] MachineMonitor.exe up to date ^(v!MONITOR_LOCAL_VER!^)
-        set "UPDATE_MONITOR=0"
-    ) else (
-        echo [*] Updating MachineMonitor ^(v!MONITOR_LOCAL_VER! -^> v!MONITOR_REMOTE_VER!^)...
-        taskkill /f /im MachineMonitor.exe >nul 2>&1
-        del /f "!MONITOR_EXE!" >nul 2>&1
-    )
-)
-
-if "!UPDATE_MONITOR!"=="1" (
-    echo [5/8] Downloading MachineMonitor.exe to Desktop...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/MachineMonitor.exe' -OutFile '!MONITOR_EXE!' -UseBasicParsing"
-    if exist "!MONITOR_EXE!" (
-        echo !MONITOR_REMOTE_VER!>"!MONITOR_VERSION_FILE!"
-        echo [+] MachineMonitor.exe v!MONITOR_REMOTE_VER! saved to Desktop
-    ) else (
-        echo [-] MachineMonitor.exe FAILED
-    )
-)
-
-if not exist "!MONITOR_CONFIG!" (
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest 'https://github.com/TuanDarcy/file-install/raw/main/MachineMonitor_config.json' -OutFile '!MONITOR_CONFIG!' -UseBasicParsing"
-    if exist "!MONITOR_CONFIG!" (
-        echo [+] MachineMonitor config created on Desktop
-        echo [*] Edit MachineMonitor_config.json and fill webhook_url to receive Discord alerts
-    ) else (
-        echo [-] MachineMonitor config FAILED
-    )
-) else (
-    echo [+] MachineMonitor config already exists - keeping user settings
-)
-
-if exist "!CONFIG_SOURCE!" if exist "!MONITOR_CONFIG!" (
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "$src='!CONFIG_SOURCE!'; $dst='!MONITOR_CONFIG!'; try { $srcCfg = Get-Content -Path $src -Raw | ConvertFrom-Json; $dstCfg = Get-Content -Path $dst -Raw | ConvertFrom-Json; if ($srcCfg.webhook_url) { $dstCfg.webhook_url = $srcCfg.webhook_url }; $dstCfg | ConvertTo-Json -Depth 8 | Set-Content -Path $dst -Encoding UTF8; Write-Output '[+] MachineMonitor webhook_url synced from setup config' } catch { Write-Output ('[-] MachineMonitor webhook sync failed: ' + $_.Exception.Message) }"
-)
-
-if exist "!MONITOR_EXE!" (
-    if exist "!STARTUP!\MachineMonitor.lnk" (
-        echo [+] MachineMonitor already in Startup
-    ) else (
-        powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws=New-Object -ComObject WScript.Shell; $s=$ws.CreateShortcut('!STARTUP!\MachineMonitor.lnk'); $s.TargetPath='!MONITOR_EXE!'; $s.WorkingDirectory='!DESKTOP!'; $s.Description='Discord machine monitor'; $s.Save()"
-        echo [+] MachineMonitor added to Startup
-    )
-    tasklist /fi "imagename eq MachineMonitor.exe" 2>nul | find "MachineMonitor.exe" >nul
-    if errorlevel 1 (
-        start "" "!MONITOR_EXE!"
-        echo [+] MachineMonitor launched
-    ) else (
-        echo [+] MachineMonitor already running
-    )
-)
 
 :: ===== [6] Check and Download 24122024 Folder =====
 echo.
@@ -420,7 +350,7 @@ if not exist "!TOOLS_24122024_DIR!\ReadMe.txt" set "TOOLS_24122024_OK=0"
 if "!TOOLS_24122024_OK!"=="1" (
     echo [+] 24122024 folder already on Desktop
 ) else (
-    echo [6/8] Downloading 24122024 folder to Desktop...
+    echo [5/6] Downloading 24122024 folder to Desktop...
     if not exist "!TOOLS_24122024_DIR!" mkdir "!TOOLS_24122024_DIR!"
     powershell -NoProfile -ExecutionPolicy Bypass -Command "$dest='!TOOLS_24122024_DIR!'; Invoke-WebRequest '%REPO_RAW%/24122024/dControl.exe' -OutFile (Join-Path $dest 'dControl.exe') -UseBasicParsing; Invoke-WebRequest '%REPO_RAW%/24122024/dControl.ini' -OutFile (Join-Path $dest 'dControl.ini') -UseBasicParsing; Invoke-WebRequest '%REPO_RAW%/24122024/Defender_Settings.vbs' -OutFile (Join-Path $dest 'Defender_Settings.vbs') -UseBasicParsing; Invoke-WebRequest '%REPO_RAW%/24122024/ReadMe.txt' -OutFile (Join-Path $dest 'ReadMe.txt') -UseBasicParsing"
     set "TOOLS_24122024_OK=1"
@@ -444,7 +374,7 @@ if exist "!DESKTOP!\FarmSync" (
     if "!FARMSYNC_KEY!"=="" (
         echo [!] No key - skipping FarmSync
     ) else (
-        echo [7/8] Installing FarmSync...
+        echo [6/6] Installing FarmSync...
         set FARMSYNC_URL=https://downloads.farmsync.cloud/client_web.exe
         set FARMSYNC_CLIENT=client_web
         :: Chạy FarmSync trong cửa sổ riêng - tránh nó thoát CMD main
@@ -485,29 +415,6 @@ if exist "!DESKTOP!\FarmSync" (
             )
         )
     )
-)
-
-:: ===== [8] Notify setup complete to Discord via FarmSync Device/Note =====
-echo.
-echo [*] Sending setup completion webhook...
-set "FS_AUTOSTART_NOTIFY="
-set "NOTIFY_SCRIPT=%~dp0setup_notify.ps1"
-for /f "tokens=*" %%f in ('powershell -NoProfile -Command "Get-ChildItem -Path \"!DESKTOP!\" -Filter \"FarmSync_AutoStart*\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName" 2^>nul') do set "FS_AUTOSTART_NOTIFY=%%f"
-if exist "!DESKTOP!\setup_notify.ps1" set "NOTIFY_SCRIPT=!DESKTOP!\setup_notify.ps1"
-if not exist "!NOTIFY_SCRIPT!" (
-    set "NOTIFY_FETCH_RESULT="
-    for /f "tokens=*" %%r in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest '%REPO_RAW%/setup_notify.ps1' -OutFile '!DESKTOP!\setup_notify.ps1' -UseBasicParsing -TimeoutSec 10; 'OK' } catch { 'ERR: ' + $_.Exception.Message }" 2^>nul') do set "NOTIFY_FETCH_RESULT=%%r"
-    if /I "!NOTIFY_FETCH_RESULT!"=="OK" (
-        echo [+] setup_notify.ps1 downloaded to Desktop
-    ) else (
-        if not "!NOTIFY_FETCH_RESULT!"=="" echo [!] setup_notify.ps1 download failed: !NOTIFY_FETCH_RESULT!
-    )
-    if exist "!DESKTOP!\setup_notify.ps1" set "NOTIFY_SCRIPT=!DESKTOP!\setup_notify.ps1"
-)
-if exist "!NOTIFY_SCRIPT!" (
-    powershell -NoProfile -ExecutionPolicy Bypass -File "!NOTIFY_SCRIPT!" -DesktopPath "!DESKTOP!" -AutoStartPath "!FS_AUTOSTART_NOTIFY!"
-) else (
-    echo [-] setup_notify.ps1 not found - skipping webhook
 )
 
 echo.
